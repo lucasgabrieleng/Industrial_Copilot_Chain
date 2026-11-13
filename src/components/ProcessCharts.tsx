@@ -102,7 +102,7 @@ export const TrendChart: React.FC<BaseChartProps> = ({
       const { ctx, width, height } = target;
       ctx.clearRect(0, 0, width, height);
 
-      const pad = { top: 20, right: 56, bottom: 32, left: 50 };
+      const pad = { top: 20, right: 68, bottom: 32, left: 50 };
       const plotW = width - pad.left - pad.right;
       const plotH = height - pad.top - pad.bottom;
       const isDark = theme === 'dark';
@@ -691,7 +691,10 @@ export const WaterfallChart: React.FC<WaterfallChartProps> = ({
       const items = [
         { label: 'Base', val: CAPACITIES.baselineRisk, color: '#64748b' },
         ...DRIVERS.map((d) => ({
-          label: d.shortLabel.replace('Estágio ', '').replace('Buffer ', ''),
+          label: d.shortLabel
+            .replace('Estágio ', '')
+            .replace('Buffer ', '')
+            .replace('Sistêmico', 'Sist.'),
           val: point[d.key],
           color: d.hex,
         })),

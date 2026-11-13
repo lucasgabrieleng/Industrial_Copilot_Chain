@@ -838,13 +838,13 @@ export default function App() {
               </div>
 
               {navMode === 'perspectives' ? (
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                <div className="flex flex-wrap gap-2">
                   {TAB_ITEMS.map((tab) => (
                     <button
                       key={tab.id}
                       type="button"
                       onClick={() => setActiveTab(tab.id)}
-                      className={`rounded-lg border px-3 py-2 text-center text-xs font-semibold transition-colors truncate cursor-pointer ${
+                      className={`rounded-lg border px-3 py-2 text-center text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer ${
                         activeTab === tab.id
                           ? 'border-sky-500/50 bg-sky-500/12 text-sky-700 dark:text-sky-300'
                           : 'border-slate-200 bg-slate-50/60 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-800'

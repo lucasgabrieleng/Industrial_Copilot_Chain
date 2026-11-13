@@ -1,0 +1,3549 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Process Chain XAI & AI Production Assistant • Centro Integrado de Operações</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --bg-accent: #0f172a;
+      --panel: rgba(17, 24, 39, 0.82);
+      --panel-solid: #111827;
+      --panel-header: rgba(30, 41, 59, 0.7);
+      --border: rgba(148, 163, 184, 0.16);
+      --border-bright: rgba(148, 163, 184, 0.32);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+      
+      --stage-a: #f43f5e;
+      --stage-a-glow: rgba(244, 63, 94, 0.25);
+      --stage-b: #eab308;
+      --stage-b-glow: rgba(234, 179, 8, 0.25);
+      --stage-c: #06b6d4;
+      --stage-c-glow: rgba(6, 182, 212, 0.25);
+      --buffer: #f97316;
+      --risk-line: #fb7185;
+      --throughput: #38bdf8;
+      --target: #818cf8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --purple: #a855f7;
+
+      --shadow-lg: 0 16px 36px -8px rgba(0, 0, 0, 0.5);
+      --glass-blur: blur(14px);
+      --radius-sm: 8px;
+      --radius: 14px;
+      --radius-lg: 20px;
+      --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --bg-accent: #e2e8f0;
+      --panel: rgba(255, 255, 255, 0.94);
+      --panel-solid: #ffffff;
+      --panel-header: rgba(241, 245, 249, 0.9);
+      --border: rgba(100, 116, 139, 0.2);
+      --border-bright: rgba(100, 116, 139, 0.35);
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-subtle: #94a3b8;
+      --shadow-lg: 0 12px 28px -6px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: radial-gradient(circle at 10% 20%, var(--bg-accent) 0%, var(--bg) 90%);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+    /* Top Bar */
+    header.header {
+      background: var(--panel);
+      backdrop-filter: var(--glass-blur);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 60;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .pulse-indicator {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--throughput);
+      box-shadow: 0 0 12px var(--throughput);
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(0.9); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 18px var(--throughput); }
+    }
+    .brand h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-tag {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--throughput);
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 700;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .brand-tag.ai-tag {
+      background: rgba(168, 85, 247, 0.15);
+      color: var(--purple);
+      border-color: rgba(168, 85, 247, 0.3);
+    }
+    .brand p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-bright);
+      background: var(--panel);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .btn:hover {
+      background: var(--panel-header);
+      border-color: var(--text-muted);
+      transform: translateY(-1px);
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border-color: #38bdf8;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+    }
+    .btn.primary:hover {
+      background: linear-gradient(135deg, #0369a1, #075985);
+    }
+    .btn.pdf-btn {
+      background: linear-gradient(135deg, #059669, #10b981);
+      border-color: #34d399;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+      font-weight: 700;
+    }
+    .btn.pdf-btn:hover {
+      background: linear-gradient(135deg, #047857, #059669);
+    }
+    .btn.assistant-btn {
+      background: linear-gradient(135deg, #7e22ce, #9333ea);
+      border-color: #c084fc;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(147, 51, 234, 0.35);
+    }
+    .btn.assistant-btn.active {
+      background: linear-gradient(135deg, #6b21a8, #7e22ce);
+      border-color: #a855f7;
+    }
+    .btn.active-live {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: #10b981;
+      color: #34d399;
+    }
+    .btn.active-live::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    /* Workspace Wrapper */
+    .workspace-wrapper {
+      display: flex;
+      width: 100%;
+      min-height: calc(100vh - 65px);
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      padding: 20px 24px 60px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 1720px;
+      margin: 0 auto;
+      transition: margin 0.3s ease;
+    }
+
+    /* Hero Banner */
+    .intro-banner {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(168, 85, 247, 0.06) 100%);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-lg);
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: var(--glass-blur);
+    }
+    .intro-content h2 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .intro-content p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+      max-width: 1200px;
+    }
+    .intro-features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .intro-feat-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+    }
+    .intro-feat-item .feat-icon {
+      font-size: 1rem;
+      line-height: 1;
+      margin-top: 2px;
+    }
+    .intro-feat-item div b {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--text);
+    }
+    .intro-feat-item div span {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* Simulador What-If */
+    .simulator-card {
+      background: var(--panel);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      box-shadow: var(--shadow-lg);
+    }
+    .simulator-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .simulator-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sim-controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .slider-group {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+    .slider-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .slider-head span.val {
+      color: var(--text);
+      font-weight: 800;
+      font-feature-settings: "tnum";
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: #38bdf8;
+      cursor: pointer;
+      height: 5px;
+      border-radius: 3px;
+      background: var(--border-bright);
+    }
+    .sim-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn-scenario {
+      font-size: 0.72rem;
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-scenario:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      border-color: var(--border-bright);
+    }
+    .btn-scenario.red:hover { border-color: var(--danger); color: #fca5a5; }
+    .btn-scenario.amber:hover { border-color: var(--warning); color: #fde68a; }
+    .btn-scenario.cyan:hover { border-color: var(--stage-c); color: #a5f3fc; }
+
+    /* KPI Row */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+    }
+    .kpi-card {
+      background: var(--panel);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 105px;
+    }
+    .kpi-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: transparent;
+    }
+    .kpi-card.a::before { background: var(--stage-a); }
+    .kpi-card.b::before { background: var(--stage-b); }
+    .kpi-card.c::before { background: var(--stage-c); }
+    .kpi-card.buffer::before { background: var(--buffer); }
+    .kpi-card.risk::before { background: var(--risk-line); }
+
+    .kpi-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+    .kpi-value {
+      font-size: 1.85rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin: 4px 0 2px 0;
+      font-feature-settings: "tnum";
+    }
+    .kpi-meta {
+      font-size: 0.7rem;
+      color: var(--text-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Diagrama de Fluxo Físico */
+    .flow-card {
+      background: var(--panel);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-lg);
+    }
+    .flow-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .flow-canvas-container {
+      width: 100%;
+      height: 180px;
+      position: relative;
+    }
+    #flowCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: var(--radius);
+    }
+
+    /* Navegação por Abas */
+    .nav-control-bar {
+      background: var(--panel);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      box-shadow: var(--shadow-lg);
+      position: sticky;
+      top: 66px;
+      z-index: 45;
+    }
+    .nav-mode-selector {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .mode-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-subtle);
+    }
+    .pill-switch {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 3px;
+    }
+    .pill-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      padding: 5px 12px;
+      font-size: 0.73rem;
+      font-weight: 700;
+      border-radius: 99px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .pill-btn.active {
+      background: var(--throughput);
+      color: #0f172a;
+      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35);
+    }
+
+    .tabs-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 6px 14px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.2s ease;
+    }
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      border-color: var(--border-bright);
+    }
+    .tab-btn.active {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--throughput);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .cursor-sync-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.73rem;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 5px 12px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .cursor-sync-indicator b {
+      color: var(--throughput);
+      font-feature-settings: "tnum";
+    }
+
+    /* Container de Abas */
+    .tab-pane {
+      display: none;
+      flex-direction: column;
+      gap: 18px;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+    .tab-pane.active {
+      display: flex;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tab-header-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .tab-header-card h3 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tab-header-card p {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    /* Grid de Gráficos Principais */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 18px;
+    }
+    .col-12 { grid-column: span 12; }
+    .col-8 { grid-column: span 8; }
+    .col-6 { grid-column: span 6; }
+    .col-4 { grid-column: span 4; }
+
+    @media (max-width: 1250px) {
+      .col-8, .col-6, .col-4 { grid-column: span 12; }
+    }
+
+    .chart-card {
+      background: var(--panel);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .chart-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chart-head h3 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .chart-head p {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: 99px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .badge.danger {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+    .badge.warn {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fde68a;
+    }
+    .badge.ok {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #a7f3d0;
+    }
+
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      height: 290px;
+    }
+    .canvas-container.tall { height: 380px; }
+    .canvas-container.short { height: 210px; }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Tooltip */
+    .custom-tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: var(--panel-solid);
+      border: 1px solid var(--border-bright);
+      box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.6);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+      font-size: 0.72rem;
+      color: var(--text);
+      z-index: 100;
+      display: none;
+      min-width: 210px;
+      backdrop-filter: blur(8px);
+      line-height: 1.4;
+    }
+
+    /* Ranking e Prescrições */
+    .rank-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .rank-item {
+      padding: 9px 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+    .rank-row-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .rank-bar-bg {
+      height: 6px;
+      background: var(--border-bright);
+      border-radius: 99px;
+      overflow: hidden;
+      margin: 6px 0 4px 0;
+    }
+    .rank-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.3s ease;
+    }
+    .rank-desc {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    .counter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .counter-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .counter-card h4 {
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+    .counter-val {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--success);
+      font-feature-settings: "tnum";
+    }
+
+    /* Legendas */
+    .legend-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    /* Modo de Ajuda */
+    .guide-box {
+      border: 1px dashed var(--border-bright);
+      background: rgba(56, 189, 248, 0.04);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      margin-top: 8px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+    .guide-box b { color: var(--text); }
+    body[data-help="off"] .guide-box { display: none; }
+
+    /* ===================================================
+       DRAWER DO ASSISTENTE IA OPERACIONAL
+       =================================================== */
+    .ai-assistant-dock {
+      width: 380px;
+      min-width: 380px;
+      background: var(--panel-solid);
+      border-left: 1px solid var(--border-bright);
+      box-shadow: -8px 0 32px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 65px;
+      height: calc(100vh - 65px);
+      transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), margin-right 0.35s ease, opacity 0.25s ease;
+      z-index: 55;
+    }
+
+    .ai-assistant-dock.collapsed {
+      margin-right: -380px;
+      width: 0;
+      min-width: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .dock-header {
+      padding: 16px 18px;
+      background: var(--panel-header);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .dock-header-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .dock-header-title h3 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .dock-header-title span.pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+    .btn-dock-close {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .btn-dock-close:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .dock-telemetry-strip {
+      padding: 10px 14px;
+      background: rgba(15, 23, 42, 0.4);
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      font-size: 0.68rem;
+    }
+    .telemetry-chip {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 6px;
+      display: flex;
+      flex-direction: column;
+    }
+    .telemetry-chip span.label {
+      color: var(--text-subtle);
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .telemetry-chip span.val {
+      font-weight: 800;
+      color: var(--text);
+      font-size: 0.78rem;
+      margin-top: 2px;
+      font-feature-settings: "tnum";
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .chat-msg {
+      max-width: 90%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.78rem;
+      line-height: 1.48;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      position: relative;
+      animation: msgPop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes msgPop {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-msg.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #ffffff;
+      border-bottom-right-radius: 3px;
+    }
+    .chat-msg.ai {
+      align-self: flex-start;
+      background: var(--panel-header);
+      color: var(--text);
+      border: 1px solid var(--border-bright);
+      border-bottom-left-radius: 3px;
+    }
+
+    .msg-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 0.66rem;
+      opacity: 0.85;
+      font-weight: 700;
+    }
+    .msg-tag {
+      font-size: 0.6rem;
+      padding: 1px 6px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .chat-action-btn {
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid #10b981;
+      color: #34d399;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .chat-action-btn:hover {
+      background: #10b981;
+      color: #0f172a;
+    }
+
+    .chat-suggestions {
+      padding: 10px 14px;
+      background: rgba(15, 23, 42, 0.2);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .chip-suggest {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      padding: 4px 9px;
+      border-radius: 99px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .chip-suggest:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: rgba(56, 189, 248, 0.4);
+      color: var(--throughput);
+    }
+
+    .chat-input-area {
+      padding: 12px 14px;
+      background: var(--panel-header);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+    }
+    .chat-input-area input {
+      flex: 1;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-bright);
+      outline: none;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.78rem;
+      font-family: inherit;
+      transition: border-color 0.2s ease;
+    }
+    .chat-input-area input:focus {
+      border-color: var(--throughput);
+    }
+    .btn-send {
+      padding: 9px 14px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: white;
+      font-weight: 700;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-send:hover {
+      background: linear-gradient(135deg, #0369a1, #075985);
+    }
+
+    /* ===================================================
+       MODAL DE PRÉ-VISUALIZAÇÃO E ESTILOS DE IMPRESSÃO
+       =================================================== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 15, 30, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+    .modal-box {
+      background: #ffffff;
+      color: #0f172a;
+      width: 100%;
+      max-width: 1100px;
+      height: 90vh;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+    .modal-bar {
+      padding: 12px 20px;
+      background: #0f172a;
+      color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 36px;
+      background: #f8fafc;
+    }
+
+    /* Folha do Relatório de Auditoria */
+    .report-sheet {
+      background: #ffffff;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 28px 36px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+      font-family: var(--font);
+    }
+    .rep-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2.5px solid #0284c7;
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+    }
+    .rep-header h1 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .rep-header p {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .rep-meta-box {
+      text-align: right;
+      font-size: 0.72rem;
+      color: #475569;
+      line-height: 1.45;
+    }
+    .rep-stamp {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 800;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+    }
+    .rep-stamp.alarm {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #f87171;
+    }
+    .rep-stamp.ok {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+    }
+
+    .rep-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .rep-kpi-card {
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      border-radius: 6px;
+      padding: 8px;
+      text-align: center;
+    }
+    .rep-kpi-card .l {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+    .rep-kpi-card .v {
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #0284c7;
+      margin: 2px 0;
+    }
+    .rep-kpi-card .s {
+      font-size: 0.62rem;
+      color: #475569;
+    }
+
+    .rep-section {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      background: #ffffff;
+      page-break-inside: avoid;
+    }
+    .rep-section h3 {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #0f172a;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 5px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .rep-charts-2x2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+      page-break-inside: avoid;
+    }
+    .rep-chart-box {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 8px;
+      background: #f8fafc;
+    }
+    .rep-chart-box h4 {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 4px;
+    }
+    .rep-chart-box img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 4px;
+    }
+
+    .rep-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72rem;
+      margin-top: 4px;
+    }
+    .rep-table th, .rep-table td {
+      border: 1px solid #e2e8f0;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    .rep-table th {
+      background: #f1f5f9;
+      color: #334155;
+      font-weight: 700;
+    }
+
+    .rep-chat-trail {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.72rem;
+    }
+    .rep-chat-item {
+      padding: 6px 10px;
+      border-radius: 4px;
+      background: #f8fafc;
+      border-left: 3px solid #0284c7;
+    }
+    .rep-chat-item.user {
+      border-left-color: #64748b;
+      background: #f1f5f9;
+    }
+
+    /* Print CSS */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+      header.header,
+      .workspace-wrapper,
+      .modal-bar,
+      footer {
+        display: none !important;
+      }
+      .modal-overlay {
+        position: static !important;
+        background: transparent !important;
+        padding: 0 !important;
+        display: block !important;
+      }
+      .modal-box {
+        height: auto !important;
+        max-width: 100% !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
+      .modal-scroll {
+        padding: 0 !important;
+        background: #ffffff !important;
+      }
+      .report-sheet {
+        border: none !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        max-width: 100% !important;
+      }
+      .rep-section, .rep-charts-2x2, .rep-header, .rep-kpi-grid {
+        page-break-inside: avoid !important;
+      }
+      .page-break {
+        page-break-after: always;
+      }
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+      margin-top: 30px;
+    }
+
+    @media (max-width: 900px) {
+      .ai-assistant-dock {
+        position: fixed;
+        right: 0;
+        top: 65px;
+        height: calc(100vh - 65px);
+        width: 100%;
+        min-width: 100%;
+      }
+      .ai-assistant-dock.collapsed {
+        margin-right: -100%;
+      }
+    }
+  </style>
+</head>
+<body data-theme="dark" data-help="on">
+
+  <header class="header">
+    <div class="brand">
+      <div class="pulse-indicator" id="liveDot"></div>
+      <div>
+        <h1>
+          Cadeia de Produção Contínua A → B → C
+          <span class="brand-tag">XAI Engine • SHAP</span>
+          <span class="brand-tag ai-tag">AI Copilot</span>
+        </h1>
+        <p>Centro Integrado de Operações: Simulação Estocástica, Assistente Conversacional & Snapshot PDF</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="btn pdf-btn" id="snapshotPdfBtn" onclick="openSnapshotModal()" title="Gerar relatório de auditoria e exportar Snapshot em PDF">
+        <span>📄</span>
+        <span>Gerar Relatório Completo PDF</span>
+      </button>
+      <button class="btn assistant-btn active" id="toggleAiBtn" title="Alternar Assistente IA Operacional">
+        <span>💬</span>
+        <span id="aiBtnText">Assistente IA: ON</span>
+      </button>
+      <button class="btn" id="playBtn" title="Simular alimentação contínua de telemetria">
+        <span id="playIcon">▶</span>
+        <span id="playText">Tempo Real: OFF</span>
+      </button>
+      <button class="btn primary" id="regenBtn" title="Gerar novo cenário aleatório">
+        <span>🎲</span>
+        <span>Novo Cenário</span>
+      </button>
+      <button class="btn" id="guideBtn" title="Alternar visualização do guia operacional">
+        <span>📖</span>
+        <span id="guideText">Guia: ON</span>
+      </button>
+      <button class="btn" id="themeBtn" title="Alternar tema claro/escuro">
+        <span id="themeIcon">☀️</span>
+        <span id="themeText">Modo Claro</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="workspace-wrapper">
+
+    <main class="main-content">
+
+      <section class="intro-banner">
+        <div class="intro-content">
+          <h2>
+            <span>🎯</span>
+            <span>Objetivo do Painel de Produção Integrada & IA Operacional</span>
+          </h2>
+          <p>
+            Este painel monitora e simula a <b>dinâmica de transferência de massa em tempo contínuo</b> ao longo de uma linha de produção seriada (<strong>Estágio A → Buffer AB → Estágio B → Buffer BC → Estágio C</strong>).
+            O motor de IA calcula o <b>Risco Consolidado de Inadimplência da Meta</b> e decompõe suas causas primárias com atribuição <b>SHAP</b>, enquanto o <b>Assistente IA Operacional</b> permite investigar gargalos e acionar prescrições. Com o botão <b>Gerar Relatório Completo PDF</b>, você emite instantaneamente relatórios formais para auditoria e passagem de turno.
+          </p>
+          <div class="intro-features">
+            <div class="intro-feat-item">
+              <span class="feat-icon">⏱️</span>
+              <div>
+                <b>Propagação & Atraso de Buffers</b>
+                <span>Oscilações upstream em A são amortecidas temporariamente pelos pulmões AB e BC.</span>
+              </div>
+            </div>
+            <div class="intro-feat-item">
+              <span class="feat-icon">🔬</span>
+              <div>
+                <b>Explicabilidade SHAP (+pp de Risco)</b>
+                <span>Identifique a contribuição exata de cada máquina e nível de estoque para o risco atual.</span>
+              </div>
+            </div>
+            <div class="intro-feat-item">
+              <span class="feat-icon">💬</span>
+              <div>
+                <b>Copiloto IA Conectado ao Processo</b>
+                <span>Pergunte qualquer aspecto da linha para receber diagnósticos baseados nos sensores do cursor.</span>
+              </div>
+            </div>
+            <div class="intro-feat-item">
+              <span class="feat-icon">📄</span>
+              <div>
+                <b>Exportação de Snapshot em PDF</b>
+                <span>Congelamento do momento com telemetria, gráficos renderizados, diagnóstico SHAP e histórico de chat.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="simulator-card">
+        <div class="simulator-head">
+          <div class="simulator-title">
+            <span>⚙️ Estúdio de Simulação Interativa (What-If Analysis)</span>
+            <span class="badge ok" id="simBadge">Operação Nominal</span>
+          </div>
+          <div class="sim-buttons">
+            <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">Choques Rápidos:</span>
+            <button class="btn-scenario red" onclick="injectShock('tripA')">⚡ Falha Primária em A</button>
+            <button class="btn-scenario amber" onclick="injectShock('bottleB')">⚠️ Gargalo em B</button>
+            <button class="btn-scenario cyan" onclick="injectShock('surgeC')">📈 Pico de Demanda em C</button>
+            <button class="btn-scenario" onclick="injectShock('reset')">🔄 Restaurar Padrões</button>
+          </div>
+        </div>
+        
+        <div class="sim-controls-grid">
+          <div class="slider-group">
+            <div class="slider-head">
+              <span>Ritmo Estágio A (Alimentação/Moagem)</span>
+              <span class="val" id="valA">240 t/h</span>
+            </div>
+            <input type="range" id="sliderA" min="120" max="280" step="1" value="240">
+          </div>
+          <div class="slider-group">
+            <div class="slider-head">
+              <span>Buffer Intermediário AB (Estoque)</span>
+              <span class="val" id="valAB">160 t</span>
+            </div>
+            <input type="range" id="sliderAB" min="10" max="300" step="5" value="160">
+          </div>
+          <div class="slider-group">
+            <div class="slider-head">
+              <span>Eficiência / OEE Estágio B (Reação)</span>
+              <span class="val" id="valB">88%</span>
+            </div>
+            <input type="range" id="sliderB" min="50" max="100" step="1" value="88">
+          </div>
+          <div class="slider-group">
+            <div class="slider-head">
+              <span>Buffer Intermediário BC (Estoque)</span>
+              <span class="val" id="valBC">120 t</span>
+            </div>
+            <input type="range" id="sliderBC" min="10" max="220" step="5" value="120">
+          </div>
+          <div class="slider-group">
+            <div class="slider-head">
+              <span>Demanda Alvo Estágio C (Produto Final)</span>
+              <span class="val" id="valC">200 t/h</span>
+            </div>
+            <input type="range" id="sliderC" min="140" max="230" step="1" value="200">
+          </div>
+        </div>
+      </section>
+
+      <section class="kpi-row">
+        <div class="kpi-card a">
+          <div class="kpi-title">Estágio A (Upstream)</div>
+          <div class="kpi-value" id="kpiRateA">-- t/h</div>
+          <div class="kpi-meta">
+            <span>OEE: <b id="kpiOeeA">--%</b></span>
+            <span id="kpiStateA">Ativo</span>
+          </div>
+        </div>
+        <div class="kpi-card buffer">
+          <div class="kpi-title">Buffer Pulmão AB</div>
+          <div class="kpi-value" id="kpiAB">-- t</div>
+          <div class="kpi-meta">
+            <span>Autonomia: <b id="kpiAutoAB">-- min</b></span>
+            <span id="kpiCapAB">Cap: 300 t</span>
+          </div>
+        </div>
+        <div class="kpi-card b">
+          <div class="kpi-title">Estágio B (Intermediário)</div>
+          <div class="kpi-value" id="kpiRateB">-- t/h</div>
+          <div class="kpi-meta">
+            <span>OEE: <b id="kpiOeeB">--%</b></span>
+            <span id="kpiStateB">Normal</span>
+          </div>
+        </div>
+        <div class="kpi-card buffer">
+          <div class="kpi-title">Buffer Pulmão BC</div>
+          <div class="kpi-value" id="kpiBC">-- t</div>
+          <div class="kpi-meta">
+            <span>Autonomia: <b id="kpiAutoBC">-- min</b></span>
+            <span id="kpiCapBC">Cap: 220 t</span>
+          </div>
+        </div>
+        <div class="kpi-card c">
+          <div class="kpi-title">Throughput Final (C)</div>
+          <div class="kpi-value" id="kpiRateC">-- t/h</div>
+          <div class="kpi-meta">
+            <span>Acumulado: <b id="kpiProdCum">-- t</b></span>
+            <span id="kpiGapCum">Meta: 200 t/h</span>
+          </div>
+        </div>
+        <div class="kpi-card risk">
+          <div class="kpi-title">Risco Global de Perda de Meta</div>
+          <div class="kpi-value" id="kpiRisk">--%</div>
+          <div class="kpi-meta">
+            <span>Baseline: 18%</span>
+            <span id="kpiRiskStatus">Calculando...</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="flow-card">
+        <div class="flow-header">
+          <div>
+            <h3 style="font-size: 0.95rem; font-weight: 800;">Topologia Físico-Estocástica da Cadeia</h3>
+            <p style="font-size: 0.72rem; color: var(--text-muted);">
+              Visualização de escoamento contínuo: taxas volumétricas instantâneas, autonomia de silos e detecção de Starvation/Gargalo.
+            </p>
+          </div>
+          <div class="badge" id="flowStatusBadge">Dinâmica Estável</div>
+        </div>
+        <div class="flow-canvas-container">
+          <canvas id="flowCanvas"></canvas>
+        </div>
+      </section>
+
+      <nav class="nav-control-bar">
+        <div class="nav-mode-selector">
+          <span class="mode-label">Modo:</span>
+          <div class="pill-switch">
+            <button class="pill-btn active" id="btnModePerspectives" onclick="switchNavMode('perspectives')">Abas Temáticas</button>
+            <button class="pill-btn" id="btnModeFocus" onclick="switchNavMode('focus')">Modo Foco / Inspeção</button>
+          </div>
+        </div>
+
+        <div class="tabs-wrapper" id="tabsPerspectives">
+          <button class="tab-btn active" onclick="activateTab('tab-all', this)">
+            <span>🌐</span><span>Visão Integrada</span>
+          </button>
+          <button class="tab-btn" onclick="activateTab('tab-rates', this)">
+            <span>📈</span><span>Vazões & Throughput</span>
+          </button>
+          <button class="tab-btn" onclick="activateTab('tab-buffers', this)">
+            <span>🔋</span><span>Buffers & Starvation</span>
+          </button>
+          <button class="tab-btn" onclick="activateTab('tab-forecast', this)">
+            <span>🎯</span><span>Produção & Metas</span>
+          </button>
+          <button class="tab-btn" onclick="activateTab('tab-xai', this)">
+            <span>🔬</span><span>Diagnóstico SHAP & XAI</span>
+          </button>
+          <button class="tab-btn" onclick="activateTab('tab-counter', this)">
+            <span>🧠</span><span>Prescrição Contrafactual</span>
+          </button>
+        </div>
+
+        <div class="tabs-wrapper" id="tabsFocus" style="display: none;">
+          <button class="tab-btn active" onclick="activateFocusChart('trend', this)">
+            <span>📈</span><span>Foco: Vazões</span>
+          </button>
+          <button class="tab-btn" onclick="activateFocusChart('buffer', this)">
+            <span>🔋</span><span>Foco: Buffers</span>
+          </button>
+          <button class="tab-btn" onclick="activateFocusChart('cum', this)">
+            <span>🎯</span><span>Foco: Metas</span>
+          </button>
+          <button class="tab-btn" onclick="activateFocusChart('shap', this)">
+            <span>🔬</span><span>Foco: SHAP Temporal</span>
+          </button>
+          <button class="tab-btn" onclick="activateFocusChart('waterfall', this)">
+            <span>📊</span><span>Foco: Waterfall</span>
+          </button>
+        </div>
+
+        <div class="cursor-sync-indicator">
+          <span>Cursor:</span>
+          <b id="syncedTimeDisplay">--:--</b>
+          <span style="font-size: 0.65rem; color: var(--text-subtle);">(Passe o mouse para sincronizar)</span>
+        </div>
+      </nav>
+
+      <div id="perspectivesContainer">
+
+        <div class="tab-pane active" id="tab-all">
+          <div class="tab-header-card">
+            <div>
+              <h3>🌐 Painel de Controle Operacional Integrado</h3>
+              <p>Visão de todas as dinâmicas da cadeia: taxas ponta a ponta, amortecimento de silos, forecast acumulado e decomposição SHAP no instante congelado.</p>
+            </div>
+            <span class="badge ok">Cursor Sincronizado</span>
+          </div>
+
+          <div class="dashboard-grid">
+            <section class="chart-card col-8">
+              <div class="chart-head">
+                <div>
+                  <h3>📈 Dinâmica Temporal da Cadeia & Throughput Final</h3>
+                  <p>Acompanhe o ritmo instantâneo de cada etapa e a curva de risco de não-atendimento da meta.</p>
+                </div>
+                <div class="legend-row">
+                  <span class="legend-item"><span class="legend-color" style="background:var(--stage-a)"></span>A</span>
+                  <span class="legend-item"><span class="legend-color" style="background:var(--stage-b)"></span>B</span>
+                  <span class="legend-item"><span class="legend-color" style="background:var(--stage-c)"></span>C</span>
+                  <span class="legend-item"><span class="legend-color" style="background:var(--throughput); height:3px;"></span>Throughput</span>
+                  <span class="legend-item"><span class="legend-color" style="background:var(--risk-line); border:1px dashed var(--risk-line);"></span>Risco (%)</span>
+                </div>
+              </div>
+              <div class="guide-box">
+                <b>Como interpretar:</b> Desvios de queda em A que se refletem tardiamente em C ilustram o <i>efeito amortecedor dos estoques</i>. Quando a linha pontilhada de Risco sobe, a margem de segurança do turno está comprometida.
+              </div>
+              <div class="canvas-container tall">
+                <canvas id="trendCanvas"></canvas>
+                <div class="custom-tooltip" id="trendTip"></div>
+              </div>
+            </section>
+
+            <section class="chart-card col-4">
+              <div class="chart-head">
+                <div>
+                  <h3>🔋 Dinâmica dos Buffers AB & BC</h3>
+                  <p>Volume e autonomia restante antes que ocorra desabastecimento (Starvation).</p>
+                </div>
+              </div>
+              <div class="guide-box">
+                <b>Como interpretar:</b> Linha tracejada vermelha representa o limiar crítico (15 min de autonomia).
+              </div>
+              <div class="canvas-container tall">
+                <canvas id="bufferCanvas"></canvas>
+                <div class="custom-tooltip" id="bufferTip"></div>
+              </div>
+            </section>
+
+            <section class="chart-card col-6">
+              <div class="chart-head">
+                <div>
+                  <h3>🎯 Produção Acumulada vs Meta Contratada</h3>
+                  <p>Entrega real acumulada e cone de incerteza probabilística até o fim do ciclo.</p>
+                </div>
+                <span class="badge" id="cumStatusBadge">No Alvo</span>
+              </div>
+              <div class="canvas-container">
+                <canvas id="cumCanvas"></canvas>
+                <div class="custom-tooltip" id="cumTip"></div>
+              </div>
+            </section>
+
+            <section class="chart-card col-6">
+              <div class="chart-head">
+                <div>
+                  <h3>🔬 Atribuição SHAP Temporal (+pp de Risco)</h3>
+                  <p>Causas-raiz aditivas que elevaram a probabilidade de falha acima do baseline.</p>
+                </div>
+                <div class="legend-row">
+                  <span class="legend-item"><span class="legend-color" style="background:var(--stage-a)"></span>A</span>
+                  <span class="legend-item"><span class="legend-color" style="background:var(--buffer)"></span>Buffer AB</span>
+                  <span class="legend-item"><span class="legend-color" style="background:var(--stage-b)"></span>OEE B</span>
+                  <span class="legend-item"><span class="legend-color" style="background:#10b981"></span>Buffer BC</span>
+                  <span class="legend-item"><span class="legend-color" style="background:var(--stage-c)"></span>Regime C</span>
+                </div>
+              </div>
+              <div class="canvas-container">
+                <canvas id="shapCanvas"></canvas>
+                <div class="custom-tooltip" id="shapTip"></div>
+              </div>
+            </section>
+
+            <section class="chart-card col-6">
+              <div class="chart-head">
+                <div>
+                  <h3>📊 Waterfall SHAP no Instante Congelado</h3>
+                  <p>Composição incremental do risco a partir do patamar base natural (18%).</p>
+                </div>
+                <span class="badge" id="waterfallTimeBadge">Instante Atual</span>
+              </div>
+              <div class="canvas-container short">
+                <canvas id="waterfallCanvas"></canvas>
+                <div class="custom-tooltip" id="waterfallTip"></div>
+              </div>
+              <p id="waterfallText" style="font-size:0.72rem; color:var(--text-muted); margin-top:10px;">
+                Passe o mouse sobre os gráficos temporais para congelar o instante.
+              </p>
+            </section>
+
+            <section class="chart-card col-6">
+              <div class="chart-head">
+                <div>
+                  <h3>🧠 Ranking de Drivers & Prescrição Contrafactual</h3>
+                  <p>Ações de menor esforço para recuperar o throughput da planta.</p>
+                </div>
+              </div>
+              <div class="rank-list" id="rankContainer"></div>
+              <div style="margin-top: 14px;">
+                <h4 style="font-size:0.78rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; font-weight:800;">
+                  Recomendações Operacionais ("What-If Prescritivo")
+                </h4>
+                <div class="counter-grid" id="counterContainer"></div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="tab-rates">
+          <div class="tab-header-card">
+            <div>
+              <h3>📈 Análise Detalhada de Taxas de Alimentação e Propagação</h3>
+              <p>Comportamento isolado dos regimes operacionais e sua sincronização ponta a ponta.</p>
+            </div>
+            <span class="badge">Downstream Effect</span>
+          </div>
+          <div class="dashboard-grid">
+            <section class="chart-card col-12">
+              <div class="canvas-container tall">
+                <canvas id="trendCanvasRates"></canvas>
+                <div class="custom-tooltip" id="trendTipRates"></div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="tab-buffers">
+          <div class="tab-header-card">
+            <div>
+              <h3>🔋 Monitoramento Crítico de Buffers Intermediários & Autonomia</h3>
+              <p>Estoques dinâmicos para proteção contra starvation downstream e blocking upstream.</p>
+            </div>
+            <span class="badge warn">Limiar Crítico: 15 min</span>
+          </div>
+          <div class="dashboard-grid">
+            <section class="chart-card col-12">
+              <div class="canvas-container tall">
+                <canvas id="bufferCanvasIsolated"></canvas>
+                <div class="custom-tooltip" id="bufferTipIsolated"></div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="tab-forecast">
+          <div class="tab-header-card">
+            <div>
+              <h3>🎯 Produção Acumulada vs Contrato com Forecast Estatístico</h3>
+              <p>Projeção de envelope P10/P50/P90 baseada no throughput instantâneo.</p>
+            </div>
+            <span class="badge ok">Meta: 200 t/h</span>
+          </div>
+          <div class="dashboard-grid">
+            <section class="chart-card col-12">
+              <div class="canvas-container tall">
+                <canvas id="cumCanvasIsolated"></canvas>
+                <div class="custom-tooltip" id="cumTipIsolated"></div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="tab-xai">
+          <div class="tab-header-card">
+            <div>
+              <h3>🔬 Inteligência Explicável (XAI): Atribuição Aditiva SHAP</h3>
+              <p>Decomposição matemática da influência de cada variável no risco global.</p>
+            </div>
+            <span class="badge">Baseline: 18%</span>
+          </div>
+          <div class="dashboard-grid">
+            <section class="chart-card col-12">
+              <div class="canvas-container tall">
+                <canvas id="shapCanvasIsolated"></canvas>
+                <div class="custom-tooltip" id="shapTipIsolated"></div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="tab-counter">
+          <div class="tab-header-card">
+            <div>
+              <h3>🧠 Análise Contrafactual Prescritiva: Ações de Menor Esforço</h3>
+              <p>Ganhos operacionais projetados via otimização marginal dos parâmetros físicos.</p>
+            </div>
+            <span class="badge ok">Algoritmo Prescritivo Ativo</span>
+          </div>
+          <div class="dashboard-grid">
+            <section class="chart-card col-6">
+              <div class="rank-list" id="rankContainerAlt"></div>
+            </section>
+            <section class="chart-card col-6">
+              <div class="counter-grid" id="counterContainerAlt"></div>
+            </section>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="focusModeContainer" style="display: none; flex-direction: column; gap: 18px;">
+        <div class="tab-header-card">
+          <div>
+            <h3 id="focusTitle">📈 Inspeção Profunda em Foco</h3>
+            <p id="focusDesc">Visualização expandida dedicada com comparador lateral e diagnóstico do instante congelado.</p>
+          </div>
+          <span class="badge" id="focusBadge">Modo Inspeção</span>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="chart-card col-8">
+            <div class="canvas-container" style="height: 480px;">
+              <canvas id="focusMainCanvas"></canvas>
+              <div class="custom-tooltip" id="focusMainTip"></div>
+            </div>
+          </section>
+
+          <section class="chart-card col-4" style="justify-content: space-between;">
+            <div>
+              <div class="chart-head">
+                <div>
+                  <h3>🔍 Snapshot no Cursor</h3>
+                  <p>Diagnóstico explicável para o momento selecionado.</p>
+                </div>
+                <span class="badge ok" id="focusTimeBadge">--:--</span>
+              </div>
+              <div class="canvas-container short" style="height: 180px;">
+                <canvas id="focusWaterfallCanvas"></canvas>
+              </div>
+            </div>
+            <div style="margin-top: 12px;">
+              <div id="focusRankContainer" class="rank-list"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <footer>
+        Process Chain XAI & AI Production Assistant • Centro Integrado de Operações • Totalmente desacoplado de dependências externas.
+      </footer>
+    </main>
+
+    <aside class="ai-assistant-dock" id="aiDock">
+      <div class="dock-header">
+        <div class="dock-header-title">
+          <span class="pulse-dot"></span>
+          <div>
+            <h3>Assistente de IA Operacional</h3>
+            <p style="font-size: 0.65rem; color: var(--text-muted);">Copiloto em tempo real conectado à telemetria</p>
+          </div>
+        </div>
+        <button class="btn-dock-close" id="closeDockBtn" title="Minimizar Assistente">✕</button>
+      </div>
+
+      <div class="dock-telemetry-strip">
+        <div class="telemetry-chip">
+          <span class="label">Throughput C</span>
+          <span class="val" id="dockRateC">-- t/h</span>
+        </div>
+        <div class="telemetry-chip">
+          <span class="label">Risco de Meta</span>
+          <span class="val" id="dockRisk" style="color:#fb7185">--%</span>
+        </div>
+        <div class="telemetry-chip">
+          <span class="label">Buffer AB / BC</span>
+          <span class="val" id="dockBuffers">-- / -- t</span>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-msg ai">
+          <div class="msg-header">
+            <span>Assistente Industrial</span>
+            <span class="msg-tag">Online</span>
+          </div>
+          Olá! Estou conectado aos sensores da cadeia de produção. Posso analisar gargalos, interpretar a decomposição SHAP do cursor, verificar autonomia de estoques e sugerir ações de rebalanceamento. Como posso ajudar?
+        </div>
+      </div>
+
+      <div class="chat-suggestions">
+        <button class="chip-suggest" onclick="askQuick('Por que o risco de meta subiu?')">⚠️ Por que o risco subiu?</button>
+        <button class="chip-suggest" onclick="askQuick('Como está o Buffer AB e o risco de starvation?')">🔋 Status Buffer AB</button>
+        <button class="chip-suggest" onclick="askQuick('Qual é o maior gargalo no instante atual?')">🔍 Qual o gargalo atual?</button>
+        <button class="chip-suggest" onclick="askQuick('Recomende uma ação prescritiva contrafactual')">💡 Prescrição Contrafactual</button>
+        <button class="chip-suggest" onclick="askQuick('Resumo executivo da cadeia de produção')">📊 Resumo do Turno</button>
+      </div>
+
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Pergunte ao assistente (ex: como evitar starvation?)..." onkeypress="handleKeyPress(event)" />
+        <button class="btn-send" onclick="sendUserMessage()">Enviar</button>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- MODAL DE PRÉ-VISUALIZAÇÃO DO SNAPSHOT COMPLETO EM PDF -->
+  <div class="modal-overlay" id="snapshotModal">
+    <div class="modal-box">
+      <div class="modal-bar">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.2rem;">📄</span>
+          <div>
+            <h3 style="font-size: 0.95rem; font-weight: 800;">Relatório Executivo de Auditoria & Snapshot XAI</h3>
+            <p style="font-size: 0.68rem; color: #94a3b8;">Pré-visualização do Snapshot completo pronto para impressão / PDF</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn pdf-btn" onclick="executeNativePrint()">🖨️ Imprimir / Salvar como PDF</button>
+          <button class="btn" onclick="closeSnapshotModal()" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white;">Fechar</button>
+        </div>
+      </div>
+      <div class="modal-scroll" id="snapshotModalContent"></div>
+    </div>
+  </div>
+
+  <script>
+    const DRIVERS = [
+      { key: 'shap_A', label: 'Estágio A (Ritmo/Disponibilidade)', color: 'var(--stage-a)', hex: '#f43f5e' },
+      { key: 'shap_AB', label: 'Buffer AB (Nível/Starvation)', color: 'var(--buffer)', hex: '#f97316' },
+      { key: 'shap_B', label: 'Estágio B (OEE/Eficiência)', color: 'var(--stage-b)', hex: '#eab308' },
+      { key: 'shap_BC', label: 'Buffer BC (Nível/Starvation)', color: '#10b981', hex: '#10b981' },
+      { key: 'shap_C', label: 'Estágio C (Regime/Qualidade)', color: 'var(--stage-c)', hex: '#06b6d4' },
+      { key: 'shap_SYS', label: 'Instabilidade & Ruído Sistêmico', color: 'var(--purple)', hex: '#a855f7' }
+    ];
+
+    const CAPACITIES = {
+      capA: 260,
+      capAB: 300,
+      capB: 230,
+      capBC: 220,
+      capC: 215,
+      targetFinal: 200,
+      baselineRisk: 18
+    };
+
+    let simParams = {
+      targetRateA: 240,
+      initialBufferAB: 160,
+      effB: 88,
+      initialBufferBC: 120,
+      targetRateC: 200,
+      shockEvent: null
+    };
+
+    let series = [];
+    let cursorIdx = 0;
+    let isLive = false;
+    let liveTimer = null;
+    let theme = 'dark';
+    let currentNavMode = 'perspectives';
+    let currentFocusChart = 'trend';
+    let isAiDockOpen = true;
+
+    // Histórico de auditoria persistente das decisões e chats
+    let decisionAuditTrail = [
+      { timestamp: '14:02:10', sender: 'Sistema XAI', action: 'Baseline de calibração SHAP inicializada (18% risco).' },
+      { timestamp: '14:15:22', sender: 'Operador', action: 'Verificação rotineira do buffer intermediário AB.' }
+    ];
+
+    function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
+    function avg(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0; }
+    function fmt(val, dec = 0) { return Number(val).toFixed(dec).replace('.', ','); }
+
+    function randomGaussian(mean = 0, stdev = 1) {
+      let u1 = 1 - Math.random();
+      let u2 = 1 - Math.random();
+      let randStdNormal = Math.sqrt(-2.0 * Math.log(u1)) * Math.sin(2.0 * Math.PI * u2);
+      return mean + stdev * randStdNormal;
+    }
+
+    function generateProcessSeries(seed = Date.now()) {
+      const data = [];
+      const totalPoints = 160;
+      const now = Date.now();
+
+      let currentAB = simParams.initialBufferAB;
+      let currentBC = simParams.initialBufferBC;
+      let prodCum = 0;
+      let targetCum = 0;
+
+      const shockPoint = simParams.shockEvent ? Math.floor(totalPoints * 0.45) : (80 + Math.floor(Math.random() * 25));
+      const shockDuration = 18 + Math.floor(Math.random() * 10);
+
+      for (let i = 0; i < totalPoints; i++) {
+        const timeObj = new Date(now - (totalPoints - 1 - i) * 60000);
+        const hh = String(timeObj.getHours()).padStart(2, '0');
+        const mm = String(timeObj.getMinutes()).padStart(2, '0');
+        const timeStr = `${hh}:${mm}`;
+
+        let inAEvent = (i >= shockPoint && i <= shockPoint + shockDuration);
+        let rateA = simParams.targetRateA + Math.sin(i / 8) * 4 + randomGaussian(0, 3.5);
+        let oeeA = 90 + randomGaussian(0, 2);
+
+        if (inAEvent) {
+          if (simParams.shockEvent === 'tripA') {
+            rateA -= 75 + (i - shockPoint) * 0.8;
+            oeeA -= 25;
+          } else if (simParams.shockEvent === 'bottleB') {
+            // A continua
+          } else {
+            rateA -= 45;
+            oeeA -= 18;
+          }
+        }
+        rateA = clamp(rateA, 80, CAPACITIES.capA);
+        oeeA = clamp(oeeA, 55, 99);
+
+        let inBEvent = (simParams.shockEvent === 'bottleB' && inAEvent);
+        let nominalB = (CAPACITIES.capB * (simParams.effB / 100)) + Math.cos(i / 11) * 3 + randomGaussian(0, 2.8);
+        if (inBEvent) nominalB -= 65;
+
+        const availInAB = currentAB + (rateA / 60);
+        let rateB = nominalB;
+        let starvedB = false;
+        if (availInAB < nominalB / 60) {
+          rateB = Math.max(30, availInAB * 60 * 0.95);
+          starvedB = true;
+        }
+        rateB = clamp(rateB, 40, CAPACITIES.capB);
+        let oeeB = starvedB ? (simParams.effB * 0.65) : (simParams.effB + randomGaussian(0, 2));
+        oeeB = clamp(oeeB, 40, 99);
+
+        currentAB = clamp(currentAB + (rateA - rateB) / 60, 0, CAPACITIES.capAB);
+
+        let inCEvent = (simParams.shockEvent === 'surgeC' && inAEvent);
+        let nominalC = simParams.targetRateC + Math.sin(i / 14) * 2 + randomGaussian(0, 2.5);
+        if (inCEvent) nominalC += 25;
+
+        const availInBC = currentBC + (rateB / 60);
+        let rateC = nominalC;
+        let starvedC = false;
+        if (availInBC < nominalC / 60) {
+          rateC = Math.max(20, availInBC * 60 * 0.95);
+          starvedC = true;
+        }
+        rateC = clamp(rateC, 30, CAPACITIES.capC);
+        let oeeC = starvedC ? 60 : (89 + randomGaussian(0, 2.2));
+        oeeC = clamp(oeeC, 45, 98);
+
+        currentBC = clamp(currentBC + (rateB - rateC) / 60, 0, CAPACITIES.capBC);
+
+        const throughput = rateC;
+        prodCum += throughput / 60;
+        targetCum += CAPACITIES.targetFinal / 60;
+
+        const autoAB = rateB > 0 ? (currentAB / (rateB / 60)) : 999;
+        const autoBC = rateC > 0 ? (currentBC / (rateC / 60)) : 999;
+
+        const riskNormA = clamp((CAPACITIES.targetFinal + 15 - rateA) / 85, 0, 1);
+        const riskNormAB = clamp((50 - currentAB) / 50, 0, 1);
+        const riskNormB = clamp((CAPACITIES.targetFinal + 10 - rateB) / 75, 0, 1);
+        const riskNormBC = clamp((40 - currentBC) / 40, 0, 1);
+        const riskNormC = clamp((CAPACITIES.targetFinal - throughput) / 60, 0, 1);
+        const riskNormSys = clamp((1 - oeeA/100)*0.25 + (1 - oeeB/100)*0.35 + (1 - oeeC/100)*0.4, 0, 1);
+
+        const wA = 0.26, wAB = 0.18, wB = 0.20, wBC = 0.16, wC = 0.15, wSys = 0.05;
+        const rawRisk = (wA*riskNormA + wAB*riskNormAB + wB*riskNormB + wBC*riskNormBC + wC*riskNormC + wSys*riskNormSys);
+        const risk = clamp(rawRisk * 100 + (throughput < CAPACITIES.targetFinal ? 12 : -4), 4, 98);
+
+        const delta = Math.max(0, risk - CAPACITIES.baselineRisk);
+        const sumWeights = wA*riskNormA + wAB*riskNormAB + wB*riskNormB + wBC*riskNormBC + wC*riskNormC + wSys*riskNormSys + 1e-5;
+
+        data.push({
+          time: timeStr,
+          rateA: Number(rateA.toFixed(1)),
+          rateB: Number(rateB.toFixed(1)),
+          rateC: Number(rateC.toFixed(1)),
+          throughput: Number(throughput.toFixed(1)),
+          ab: Number(currentAB.toFixed(1)),
+          bc: Number(currentBC.toFixed(1)),
+          autoAB: Number(autoAB.toFixed(1)),
+          autoBC: Number(autoBC.toFixed(1)),
+          oeeA: Number(oeeA.toFixed(1)),
+          oeeB: Number(oeeB.toFixed(1)),
+          oeeC: Number(oeeC.toFixed(1)),
+          prodCum: Number(prodCum.toFixed(1)),
+          targetCum: Number(targetCum.toFixed(1)),
+          risk: Number(risk.toFixed(1)),
+          shap_A: Number((delta * (wA * riskNormA / sumWeights)).toFixed(1)),
+          shap_AB: Number((delta * (wAB * riskNormAB / sumWeights)).toFixed(1)),
+          shap_B: Number((delta * (wB * riskNormB / sumWeights)).toFixed(1)),
+          shap_BC: Number((delta * (wBC * riskNormBC / sumWeights)).toFixed(1)),
+          shap_C: Number((delta * (wC * riskNormC / sumWeights)).toFixed(1)),
+          shap_SYS: Number((delta * (wSys * riskNormSys / sumWeights)).toFixed(1)),
+          starvedB,
+          starvedC
+        });
+      }
+      return data;
+    }
+
+    const dom = {
+      playBtn: document.getElementById('playBtn'),
+      playIcon: document.getElementById('playIcon'),
+      playText: document.getElementById('playText'),
+      regenBtn: document.getElementById('regenBtn'),
+      themeBtn: document.getElementById('themeBtn'),
+      themeIcon: document.getElementById('themeIcon'),
+      themeText: document.getElementById('themeText'),
+      guideBtn: document.getElementById('guideBtn'),
+      guideText: document.getElementById('guideText'),
+      simBadge: document.getElementById('simBadge'),
+      syncedTimeDisplay: document.getElementById('syncedTimeDisplay'),
+
+      toggleAiBtn: document.getElementById('toggleAiBtn'),
+      aiBtnText: document.getElementById('aiBtnText'),
+      aiDock: document.getElementById('aiDock'),
+      closeDockBtn: document.getElementById('closeDockBtn'),
+      dockRateC: document.getElementById('dockRateC'),
+      dockRisk: document.getElementById('dockRisk'),
+      dockBuffers: document.getElementById('dockBuffers'),
+      chatMessages: document.getElementById('chatMessages'),
+      chatInput: document.getElementById('chatInput'),
+
+      sliderA: document.getElementById('sliderA'),
+      sliderAB: document.getElementById('sliderAB'),
+      sliderB: document.getElementById('sliderB'),
+      sliderBC: document.getElementById('sliderBC'),
+      sliderC: document.getElementById('sliderC'),
+      valA: document.getElementById('valA'),
+      valAB: document.getElementById('valAB'),
+      valB: document.getElementById('valB'),
+      valBC: document.getElementById('valBC'),
+      valC: document.getElementById('valC'),
+
+      kpiRateA: document.getElementById('kpiRateA'),
+      kpiOeeA: document.getElementById('kpiOeeA'),
+      kpiAB: document.getElementById('kpiAB'),
+      kpiAutoAB: document.getElementById('kpiAutoAB'),
+      kpiRateB: document.getElementById('kpiRateB'),
+      kpiOeeB: document.getElementById('kpiOeeB'),
+      kpiStateB: document.getElementById('kpiStateB'),
+      kpiBC: document.getElementById('kpiBC'),
+      kpiAutoBC: document.getElementById('kpiAutoBC'),
+      kpiRateC: document.getElementById('kpiRateC'),
+      kpiProdCum: document.getElementById('kpiProdCum'),
+      kpiRisk: document.getElementById('kpiRisk'),
+      kpiRiskStatus: document.getElementById('kpiRiskStatus'),
+
+      flowCanvas: document.getElementById('flowCanvas'),
+      trendCanvas: document.getElementById('trendCanvas'),
+      trendTip: document.getElementById('trendTip'),
+      bufferCanvas: document.getElementById('bufferCanvas'),
+      bufferTip: document.getElementById('bufferTip'),
+      cumCanvas: document.getElementById('cumCanvas'),
+      cumTip: document.getElementById('cumTip'),
+      shapCanvas: document.getElementById('shapCanvas'),
+      shapTip: document.getElementById('shapTip'),
+      waterfallCanvas: document.getElementById('waterfallCanvas'),
+      waterfallTip: document.getElementById('waterfallTip'),
+      waterfallTimeBadge: document.getElementById('waterfallTimeBadge'),
+      waterfallText: document.getElementById('waterfallText'),
+      rankContainer: document.getElementById('rankContainer'),
+      counterContainer: document.getElementById('counterContainer'),
+
+      trendCanvasRates: document.getElementById('trendCanvasRates'),
+      trendTipRates: document.getElementById('trendTipRates'),
+      bufferCanvasIsolated: document.getElementById('bufferCanvasIsolated'),
+      bufferTipIsolated: document.getElementById('bufferTipIsolated'),
+      cumCanvasIsolated: document.getElementById('cumCanvasIsolated'),
+      cumTipIsolated: document.getElementById('cumTipIsolated'),
+      shapCanvasIsolated: document.getElementById('shapCanvasIsolated'),
+      shapTipIsolated: document.getElementById('shapTipIsolated'),
+      rankContainerAlt: document.getElementById('rankContainerAlt'),
+      counterContainerAlt: document.getElementById('counterContainerAlt'),
+
+      focusModeContainer: document.getElementById('focusModeContainer'),
+      perspectivesContainer: document.getElementById('perspectivesContainer'),
+      tabsPerspectives: document.getElementById('tabsPerspectives'),
+      tabsFocus: document.getElementById('tabsFocus'),
+      btnModePerspectives: document.getElementById('btnModePerspectives'),
+      btnModeFocus: document.getElementById('btnModeFocus'),
+      focusMainCanvas: document.getElementById('focusMainCanvas'),
+      focusMainTip: document.getElementById('focusMainTip'),
+      focusWaterfallCanvas: document.getElementById('focusWaterfallCanvas'),
+      focusRankContainer: document.getElementById('focusRankContainer'),
+      focusTitle: document.getElementById('focusTitle'),
+      focusDesc: document.getElementById('focusDesc'),
+      focusTimeBadge: document.getElementById('focusTimeBadge'),
+
+      snapshotModal: document.getElementById('snapshotModal'),
+      snapshotModalContent: document.getElementById('snapshotModalContent')
+    };
+
+    function setupCanvas(canvas) {
+      if (!canvas) return null;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return null;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, width: rect.width, height: rect.height };
+    }
+
+    let flowParticles = [];
+    function initFlowParticles() {
+      flowParticles = [];
+      for (let i = 0; i < 40; i++) {
+        flowParticles.push({
+          progress: Math.random(),
+          speed: 0.003 + Math.random() * 0.004,
+          lane: Math.random() * 8 - 4
+        });
+      }
+    }
+
+    function renderFlowDiagram() {
+      const target = setupCanvas(dom.flowCanvas);
+      if (!target) return;
+      const { ctx, width, height } = target;
+      ctx.clearRect(0, 0, width, height);
+
+      const p = series[cursorIdx] || series[series.length - 1];
+      const isDark = theme === 'dark';
+
+      const nodeW = Math.min(120, width * 0.16);
+      const nodeH = 75;
+      const centerY = height / 2;
+
+      const nodes = [
+        { id: 'A', name: 'Estágio A', sub: 'Alimentação', x: width * 0.10 - nodeW/2, y: centerY - nodeH/2, rate: p.rateA, color: '#f43f5e', oee: p.oeeA },
+        { id: 'AB', isBuffer: true, name: 'Buffer AB', x: width * 0.30 - 36, y: centerY - 45, val: p.ab, cap: CAPACITIES.capAB, auto: p.autoAB },
+        { id: 'B', name: 'Estágio B', sub: 'Reação/Massa', x: width * 0.50 - nodeW/2, y: centerY - nodeH/2, rate: p.rateB, color: '#eab308', oee: p.oeeB, starved: p.starvedB },
+        { id: 'BC', isBuffer: true, name: 'Buffer BC', x: width * 0.70 - 36, y: centerY - 45, val: p.bc, cap: CAPACITIES.capBC, auto: p.autoBC },
+        { id: 'C', name: 'Estágio C', sub: 'Envase/Final', x: width * 0.90 - nodeW/2, y: centerY - nodeH/2, rate: p.rateC, color: '#06b6d4', oee: p.oeeC, starved: p.starvedC }
+      ];
+
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = isDark ? '#1e293b' : '#cbd5e1';
+      ctx.beginPath();
+      ctx.moveTo(nodes[0].x + nodeW, centerY);
+      ctx.lineTo(nodes[4].x, centerY);
+      ctx.stroke();
+
+      flowParticles.forEach(pt => {
+        pt.progress += pt.speed * (p.throughput / 180);
+        if (pt.progress > 1) pt.progress = 0;
+
+        const startX = nodes[0].x + nodeW;
+        const endX = nodes[4].x;
+        const px = startX + (endX - startX) * pt.progress;
+        const py = centerY + pt.lane;
+
+        ctx.fillStyle = isDark ? '#38bdf8' : '#0284c7';
+        ctx.beginPath();
+        ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      nodes.forEach(n => {
+        if (n.isBuffer) {
+          const bw = 72, bh = 85;
+          ctx.fillStyle = isDark ? '#0f172a' : '#f1f5f9';
+          ctx.strokeStyle = isDark ? 'rgba(249, 115, 22, 0.4)' : 'rgba(249, 115, 22, 0.6)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.roundRect(n.x, centerY - bh/2, bw, bh, 8);
+          ctx.fill();
+          ctx.stroke();
+
+          const fillRatio = clamp(n.val / n.cap, 0, 1);
+          const fillH = bh * fillRatio;
+          ctx.fillStyle = n.auto < 15 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(249, 115, 22, 0.35)';
+          ctx.beginPath();
+          ctx.roundRect(n.x + 2, centerY + bh/2 - fillH, bw - 4, fillH - 2, [0, 0, 6, 6]);
+          ctx.fill();
+
+          ctx.fillStyle = isDark ? '#f1f5f9' : '#0f172a';
+          ctx.font = 'bold 10px system-ui';
+          ctx.textAlign = 'center';
+          ctx.fillText(n.name, n.x + bw/2, centerY - bh/2 - 6);
+          ctx.font = 'bold 12px system-ui';
+          ctx.fillText(`${fmt(n.val, 0)} t`, n.x + bw/2, centerY + 2);
+          ctx.font = '9px system-ui';
+          ctx.fillStyle = n.auto < 15 ? '#ef4444' : (isDark ? '#94a3b8' : '#475569');
+          ctx.fillText(`${fmt(n.auto, 0)} min`, n.x + bw/2, centerY + 16);
+        } else {
+          ctx.fillStyle = isDark ? '#111827' : '#ffffff';
+          ctx.strokeStyle = n.starved ? '#ef4444' : n.color;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.roundRect(n.x, n.y, nodeW, nodeH, 10);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = n.color;
+          ctx.font = 'bold 11px system-ui';
+          ctx.textAlign = 'left';
+          ctx.fillText(n.name, n.x + 8, n.y + 17);
+
+          ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+          ctx.font = '8px system-ui';
+          ctx.fillText(n.sub, n.x + 8, n.y + 28);
+
+          ctx.fillStyle = isDark ? '#ffffff' : '#0f172a';
+          ctx.font = 'bold 14px system-ui';
+          ctx.fillText(`${fmt(n.rate, 0)} t/h`, n.x + 8, n.y + 48);
+
+          ctx.font = 'bold 8.5px system-ui';
+          if (n.starved) {
+            ctx.fillStyle = '#ef4444';
+            ctx.fillText('● STARVATION', n.x + 8, n.y + 64);
+          } else {
+            ctx.fillStyle = '#10b981';
+            ctx.fillText(`● OEE: ${fmt(n.oee, 0)}%`, n.x + 8, n.y + 64);
+          }
+        }
+      });
+    }
+
+    function renderTrendOn(canvas) {
+      const target = setupCanvas(canvas);
+      if (!target) return;
+      const { ctx, width, height } = target;
+      ctx.clearRect(0, 0, width, height);
+
+      const pad = { top: 20, right: 55, bottom: 35, left: 50 };
+      const plotW = width - pad.left - pad.right;
+      const plotH = height - pad.top - pad.bottom;
+      const isDark = theme === 'dark';
+
+      ctx.strokeStyle = isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(100, 116, 139, 0.15)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 5; i++) {
+        const y = pad.top + (plotH / 5) * i;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(width - pad.right, y);
+        ctx.stroke();
+      }
+
+      const minVal = 60, maxVal = 290;
+      const mapX = i => pad.left + (plotW / (series.length - 1)) * i;
+      const mapY = v => pad.top + plotH - ((v - minVal) / (maxVal - minVal)) * plotH;
+      const mapRisk = r => pad.top + plotH - (r / 100) * plotH;
+
+      const lines = [
+        { k: 'rateA', c: '#f43f5e', w: 1.8 },
+        { k: 'rateB', c: '#eab308', w: 1.8 },
+        { k: 'rateC', c: '#06b6d4', w: 1.8 },
+        { k: 'throughput', c: '#38bdf8', w: 2.8 }
+      ];
+
+      lines.forEach(l => {
+        ctx.strokeStyle = l.c;
+        ctx.lineWidth = l.w;
+        ctx.beginPath();
+        series.forEach((pt, i) => {
+          const x = mapX(i);
+          const y = mapY(pt[l.k]);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      });
+
+      ctx.strokeStyle = '#fb7185';
+      ctx.lineWidth = 2.2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      series.forEach((pt, i) => {
+        const x = mapX(i);
+        const y = mapRisk(pt.risk);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const cx = mapX(cursorIdx);
+      ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(cx, pad.top);
+      ctx.lineTo(cx, height - pad.bottom);
+      ctx.stroke();
+
+      const cur = series[cursorIdx];
+      lines.forEach(l => {
+        ctx.fillStyle = l.c;
+        ctx.beginPath();
+        ctx.arc(cx, mapY(cur[l.k]), 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+      ctx.font = '10px system-ui';
+      ctx.textAlign = 'right';
+      ctx.fillText('280 t/h', pad.left - 8, pad.top + 8);
+      ctx.fillText('170 t/h', pad.left - 8, pad.top + plotH / 2);
+      ctx.fillText('60 t/h', pad.left - 8, height - pad.bottom);
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#fb7185';
+      ctx.fillText('100% Risco', width - pad.right + 8, pad.top + 8);
+      ctx.fillText('0%', width - pad.right + 8, height - pad.bottom);
+
+      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+      ctx.textAlign = 'center';
+      const step = Math.floor(series.length / 6);
+      for (let i = 0; i < series.length; i += step) {
+        ctx.fillText(series[i].time, mapX(i), height - 12);
+      }
+    }
+
+    function renderBufferOn(canvas) {
+      const target = setupCanvas(canvas);
+      if (!target) return;
+      const { ctx, width, height } = target;
+      ctx.clearRect(0, 0, width, height);
+
+      const pad = { top: 20, right: 30, bottom: 35, left: 45 };
+      const plotW = width - pad.left - pad.right;
+      const plotH = height - pad.top - pad.bottom;
+      const isDark = theme === 'dark';
+
+      const mapX = i => pad.left + (plotW / (series.length - 1)) * i;
+      const mapY = v => pad.top + plotH - (v / 320) * plotH;
+
+      ctx.strokeStyle = isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(100, 116, 139, 0.15)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = pad.top + (plotH / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(width - pad.right, y);
+        ctx.stroke();
+      }
+
+      const dangerY = mapY(30);
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(pad.left, dangerY);
+      ctx.lineTo(width - pad.right, dangerY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.strokeStyle = '#f97316';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      series.forEach((pt, i) => {
+        const x = mapX(i), y = mapY(pt.ab);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      series.forEach((pt, i) => {
+        const x = mapX(i), y = mapY(pt.bc);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      const cx = mapX(cursorIdx);
+      ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(cx, pad.top);
+      ctx.lineTo(cx, height - pad.bottom);
+      ctx.stroke();
+
+      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+      ctx.font = '10px system-ui';
+      ctx.textAlign = 'right';
+      ctx.fillText('300 t', pad.left - 6, pad.top + 8);
+      ctx.fillText('0 t', pad.left - 6, height - pad.bottom);
+    }
+
+    function renderCumOn(canvas) {
+      const target = setupCanvas(canvas);
+      if (!target) return;
+      const { ctx, width, height } = target;
+      ctx.clearRect(0, 0, width, height);
+
+      const pad = { top: 20, right: 35, bottom: 35, left: 55 };
+      const plotW = width - pad.left - pad.right;
+      const plotH = height - pad.top - pad.bottom;
+      const isDark = theme === 'dark';
+
+      const maxCum = Math.max(series[series.length - 1].targetCum * 1.15, series[series.length - 1].prodCum * 1.15);
+      const mapX = i => pad.left + (plotW / (series.length - 1)) * i;
+      const mapY = v => pad.top + plotH - (v / maxCum) * plotH;
+
+      ctx.strokeStyle = '#818cf8';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      series.forEach((pt, i) => {
+        const x = mapX(i), y = mapY(pt.targetCum);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const cur = series[cursorIdx];
+      const remaining = series.length - 1 - cursorIdx;
+      if (remaining > 0) {
+        const cx = mapX(cursorIdx);
+        const endX = mapX(series.length - 1);
+        const currentProd = cur.prodCum;
+        const currentRate = cur.throughput;
+
+        const projUpper = currentProd + ((currentRate + 15) / 60) * remaining;
+        const projLower = currentProd + ((currentRate - 20) / 60) * remaining;
+
+        ctx.fillStyle = isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(2, 132, 199, 0.12)';
+        ctx.beginPath();
+        ctx.moveTo(cx, mapY(currentProd));
+        ctx.lineTo(endX, mapY(projUpper));
+        ctx.lineTo(endX, mapY(projLower));
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      for (let i = 0; i <= cursorIdx; i++) {
+        const x = mapX(i), y = mapY(series[i].prodCum);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      const cx = mapX(cursorIdx);
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.arc(cx, mapY(cur.prodCum), 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+      ctx.font = '10px system-ui';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${fmt(maxCum, 0)} t`, pad.left - 6, pad.top + 8);
+      ctx.fillText('0 t', pad.left - 6, height - pad.bottom);
+    }
+
+    function renderShapOn(canvas) {
+      const target = setupCanvas(canvas);
+      if (!target) return;
+      const { ctx, width, height } = target;
+      ctx.clearRect(0, 0, width, height);
+
+      const pad = { top: 20, right: 35, bottom: 35, left: 45 };
+      const plotW = width - pad.left - pad.right;
+      const plotH = height - pad.top - pad.bottom;
+      const isDark = theme === 'dark';
+
+      const mapX = i => pad.left + (plotW / (series.length - 1)) * i;
+      const barW = Math.max(2.5, (plotW / series.length) * 0.9);
+      const maxShapSum = 80;
+      const mapY = v => pad.top + plotH - (v / maxShapSum) * plotH;
+
+      series.forEach((pt, i) => {
+        const x = mapX(i);
+        let currentY = 0;
+
+        DRIVERS.forEach(d => {
+          const val = pt[d.key];
+          if (val > 0) {
+            const yBottom = mapY(currentY);
+            const yTop = mapY(currentY + val);
+            ctx.fillStyle = d.hex;
+            ctx.fillRect(x - barW / 2, yTop, barW, yBottom - yTop);
+            currentY += val;
+          }
+        });
+      });
+
+      const cx = mapX(cursorIdx);
+      ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(cx, pad.top);
+      ctx.lineTo(cx, height - pad.bottom);
+      ctx.stroke();
+
+      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+      ctx.font = '10px system-ui';
+      ctx.textAlign = 'right';
+      ctx.fillText(`+${maxShapSum} pp`, pad.left - 6, pad.top + 8);
+      ctx.fillText('+0 pp', pad.left - 6, height - pad.bottom);
+    }
+
+    function renderWaterfallOn(canvas) {
+      const target = setupCanvas(canvas);
+      if (!target) return;
+      const { ctx, width, height } = target;
+      ctx.clearRect(0, 0, width, height);
+
+      const pad = { top: 20, right: 20, bottom: 25, left: 35 };
+      const plotW = width - pad.left - pad.right;
+      const plotH = height - pad.top - pad.bottom;
+      const isDark = theme === 'dark';
+
+      const cur = series[cursorIdx];
+      const items = [
+        { label: 'Base', val: CAPACITIES.baselineRisk, color: '#64748b' }
+      ];
+
+      DRIVERS.forEach(d => {
+        items.push({
+          label: d.label.split(' ')[0],
+          val: cur[d.key],
+          color: d.hex
+        });
+      });
+
+      const maxRisk = 100;
+      const mapY = v => pad.top + plotH - (v / maxRisk) * plotH;
+
+      const totalBars = items.length + 1;
+      const barW = Math.min(48, (plotW / totalBars) * 0.75);
+      const spacing = plotW / totalBars;
+
+      let running = 0;
+      items.forEach((it, idx) => {
+        const x = pad.left + spacing * idx + (spacing - barW) / 2;
+        const startY = idx === 0 ? 0 : running;
+        const endY = startY + it.val;
+
+        ctx.fillStyle = it.color;
+        ctx.fillRect(x, mapY(endY), barW, mapY(startY) - mapY(endY));
+
+        ctx.fillStyle = isDark ? '#ffffff' : '#0f172a';
+        ctx.font = 'bold 10px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(`+${fmt(it.val, 0)}`, x + barW / 2, mapY(endY) - 4);
+
+        ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+        ctx.font = '9px system-ui';
+        ctx.fillText(it.label, x + barW / 2, height - 6);
+
+        running = endY;
+      });
+
+      const xTot = pad.left + spacing * items.length + (spacing - barW) / 2;
+      ctx.fillStyle = '#fb7185';
+      ctx.fillRect(xTot, mapY(cur.risk), barW, mapY(0) - mapY(cur.risk));
+
+      ctx.fillStyle = isDark ? '#ffffff' : '#0f172a';
+      ctx.font = 'bold 10px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${fmt(cur.risk, 0)}%`, xTot + barW / 2, mapY(cur.risk) - 4);
+
+      ctx.fillStyle = '#fb7185';
+      ctx.font = 'bold 9px system-ui';
+      ctx.fillText('Risco', xTot + barW / 2, height - 6);
+    }
+
+    function updateRankingAndCounterfactuals() {
+      const cur = series[cursorIdx];
+
+      const sorted = DRIVERS.map(d => ({
+        ...d,
+        value: cur[d.key]
+      })).sort((a, b) => b.value - a.value);
+
+      function buildRankHtml() {
+        return sorted.slice(0, 4).map(item => {
+          const pctBar = clamp((item.value / 40) * 100, 4, 100);
+          return `
+            <div class="rank-item">
+              <div class="rank-row-top">
+                <span style="color:${item.color}">${item.label}</span>
+                <span style="font-feature-settings:'tnum'">+${fmt(item.value, 1)} pp</span>
+              </div>
+              <div class="rank-bar-bg">
+                <div class="rank-bar-fill" style="width:${pctBar}%; background:${item.hex};"></div>
+              </div>
+              <div class="rank-desc">
+                ${item.value > 12 ? '⚠️ Ofensor crítico primário na janela congelada.' : 'Impacto secundário no risco consolidado.'}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      if (dom.rankContainer) dom.rankContainer.innerHTML = buildRankHtml();
+      if (dom.rankContainerAlt) dom.rankContainerAlt.innerHTML = buildRankHtml();
+      if (dom.focusRankContainer) dom.focusRankContainer.innerHTML = buildRankHtml();
+
+      const primary = sorted[0];
+      const secondary = sorted[1];
+
+      const scenarios = [
+        {
+          title: `Intervenção em ${primary.label.split(' ')[0]}`,
+          gain: (primary.value * 0.65).toFixed(1),
+          action: primary.key.includes('A') 
+            ? 'Aumentar alimentação em +25 t/h e normalizar blend upstream'
+            : primary.key.includes('AB')
+            ? 'Reconstituir pulmão AB via bypass ou redução transitória de B'
+            : primary.key.includes('B')
+            ? 'Eliminar microparadas no Estágio B e elevar OEE para 92%'
+            : 'Sincronizar taxa de envase em C com o fluxo de alimentação BC'
+        },
+        {
+          title: `Ação Preventiva no Estágio Secundário`,
+          gain: (secondary.value * 0.5).toFixed(1),
+          action: 'Suavizar setpoint do reator para evitar choque térmico e depleção do estoque'
+        }
+      ];
+
+      function buildCounterHtml() {
+        return scenarios.map(sc => `
+          <div class="counter-card">
+            <div>
+              <h4>${sc.title}</h4>
+              <p style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">${sc.action}</p>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+              <span style="font-size:0.7rem; color:var(--text-subtle);">Redução projetada no Risco:</span>
+              <span class="counter-val">-${sc.gain} pp</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      if (dom.counterContainer) dom.counterContainer.innerHTML = buildCounterHtml();
+      if (dom.counterContainerAlt) dom.counterContainerAlt.innerHTML = buildCounterHtml();
+
+      if (dom.waterfallTimeBadge) dom.waterfallTimeBadge.textContent = `Instante ${cur.time}`;
+      if (dom.focusTimeBadge) dom.focusTimeBadge.textContent = `Instante ${cur.time}`;
+      if (dom.syncedTimeDisplay) dom.syncedTimeDisplay.textContent = cur.time;
+
+      if (dom.waterfallText) {
+        dom.waterfallText.innerHTML = `
+          No instante <b>${cur.time}</b>, o risco global está em <b>${fmt(cur.risk, 0)}%</b> (baseline de 18%).
+          O principal ofensor é <b>${primary.label}</b> (+${fmt(primary.value, 1)} pp), indicando que
+          intervenções nesta variável terão o maior retorno em redução de vulnerabilidade de atendimento de meta.
+        `;
+      }
+    }
+
+    function updateAllPanels() {
+      const cur = series[cursorIdx] || series[series.length - 1];
+
+      if (dom.kpiRateA) dom.kpiRateA.textContent = `${fmt(cur.rateA, 0)} t/h`;
+      if (dom.kpiOeeA) dom.kpiOeeA.textContent = `${fmt(cur.oeeA, 0)}%`;
+      if (dom.kpiAB) dom.kpiAB.textContent = `${fmt(cur.ab, 0)} t`;
+      if (dom.kpiAutoAB) dom.kpiAutoAB.textContent = `${fmt(cur.autoAB, 0)} min`;
+
+      if (dom.kpiRateB) dom.kpiRateB.textContent = `${fmt(cur.rateB, 0)} t/h`;
+      if (dom.kpiOeeB) dom.kpiOeeB.textContent = `${fmt(cur.oeeB, 0)}%`;
+      if (dom.kpiStateB) {
+        dom.kpiStateB.textContent = cur.starvedB ? '⚠️ Starvation' : 'Operação OK';
+        dom.kpiStateB.style.color = cur.starvedB ? 'var(--danger)' : 'var(--text-subtle)';
+      }
+
+      if (dom.kpiBC) dom.kpiBC.textContent = `${fmt(cur.bc, 0)} t`;
+      if (dom.kpiAutoBC) dom.kpiAutoBC.textContent = `${fmt(cur.autoBC, 0)} min`;
+
+      if (dom.kpiRateC) dom.kpiRateC.textContent = `${fmt(cur.throughput, 0)} t/h`;
+      if (dom.kpiProdCum) dom.kpiProdCum.textContent = `${fmt(cur.prodCum, 0)} t`;
+
+      if (dom.kpiRisk) dom.kpiRisk.textContent = `${fmt(cur.risk, 0)}%`;
+      if (dom.kpiRiskStatus) {
+        if (cur.risk >= 50) {
+          dom.kpiRiskStatus.textContent = 'Alerta Crítico';
+          dom.kpiRiskStatus.style.color = 'var(--danger)';
+        } else if (cur.risk >= 30) {
+          dom.kpiRiskStatus.textContent = 'Atenção Operacional';
+          dom.kpiRiskStatus.style.color = 'var(--warning)';
+        } else {
+          dom.kpiRiskStatus.textContent = 'Sob Controle';
+          dom.kpiRiskStatus.style.color = 'var(--success)';
+        }
+      }
+
+      if (dom.dockRateC) dom.dockRateC.textContent = `${fmt(cur.throughput, 0)} t/h`;
+      if (dom.dockRisk) dom.dockRisk.textContent = `${fmt(cur.risk, 0)}%`;
+      if (dom.dockBuffers) dom.dockBuffers.textContent = `${fmt(cur.ab, 0)} / ${fmt(cur.bc, 0)} t`;
+
+      renderTrendOn(dom.trendCanvas);
+      renderBufferOn(dom.bufferCanvas);
+      renderCumOn(dom.cumCanvas);
+      renderShapOn(dom.shapCanvas);
+      renderWaterfallOn(dom.waterfallCanvas);
+
+      renderTrendOn(dom.trendCanvasRates);
+      renderBufferOn(dom.bufferCanvasIsolated);
+      renderCumOn(dom.cumCanvasIsolated);
+      renderShapOn(dom.shapCanvasIsolated);
+
+      renderFocusChart();
+      updateRankingAndCounterfactuals();
+    }
+
+    window.activateTab = function(tabId, el) {
+      document.querySelectorAll('#perspectivesContainer .tab-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('#tabsPerspectives .tab-btn').forEach(b => b.classList.remove('active'));
+
+      const targetPane = document.getElementById(tabId);
+      if (targetPane) targetPane.classList.add('active');
+      if (el) el.classList.add('active');
+
+      setTimeout(updateAllPanels, 30);
+    };
+
+    window.switchNavMode = function(mode) {
+      currentNavMode = mode;
+      if (mode === 'perspectives') {
+        dom.btnModePerspectives.classList.add('active');
+        dom.btnModeFocus.classList.remove('active');
+        dom.tabsPerspectives.style.display = 'flex';
+        dom.tabsFocus.style.display = 'none';
+        dom.perspectivesContainer.style.display = 'flex';
+        dom.focusModeContainer.style.display = 'none';
+      } else {
+        dom.btnModePerspectives.classList.remove('active');
+        dom.btnModeFocus.classList.add('active');
+        dom.tabsPerspectives.style.display = 'none';
+        dom.tabsFocus.style.display = 'flex';
+        dom.perspectivesContainer.style.display = 'none';
+        dom.focusModeContainer.style.display = 'flex';
+        renderFocusChart();
+      }
+      setTimeout(updateAllPanels, 30);
+    };
+
+    window.activateFocusChart = function(chartKey, el) {
+      currentFocusChart = chartKey;
+      document.querySelectorAll('#tabsFocus .tab-btn').forEach(b => b.classList.remove('active'));
+      if (el) el.classList.add('active');
+      renderFocusChart();
+    };
+
+    function renderFocusChart() {
+      if (currentNavMode !== 'focus') return;
+
+      const titles = {
+        trend: { t: '📈 Inspeção Profunda: Dinâmica Temporal da Cadeia', d: 'Análise detalhada de velocidades operacionais em tempo real e taxa consolidada de throughput vs risco percentual.' },
+        buffer: { t: '🔋 Inspeção Profunda: Pulmões Intermediários AB & BC', d: 'Avaliação de estoques de transição e cálculo do tempo restante de autonomia antes de choque.' },
+        cum: { t: '🎯 Inspeção Profunda: Cumprimento de Metas e Forecast', d: 'Projeção estocástica com cone de incerteza P10/P90 baseada no throughput consolidado do cursor.' },
+        shap: { t: '🔬 Inspeção Profunda: Atribuição Aditiva SHAP', d: 'Série temporal completa de contribuições ponderadas dos ofensores para o risco global.' },
+        waterfall: { t: '📊 Inspeção Profunda: Decomposição Waterfall', d: 'Detalhamento do desvio de risco em relação ao patamar base no instante congelado.' }
+      };
+
+      if (dom.focusTitle) dom.focusTitle.textContent = titles[currentFocusChart].t;
+      if (dom.focusDesc) dom.focusDesc.textContent = titles[currentFocusChart].d;
+
+      if (currentFocusChart === 'trend') renderTrendOn(dom.focusMainCanvas);
+      else if (currentFocusChart === 'buffer') renderBufferOn(dom.focusMainCanvas);
+      else if (currentFocusChart === 'cum') renderCumOn(dom.focusMainCanvas);
+      else if (currentFocusChart === 'shap') renderShapOn(dom.focusMainCanvas);
+      else if (currentFocusChart === 'waterfall') renderWaterfallOn(dom.focusMainCanvas);
+
+      renderWaterfallOn(dom.focusWaterfallCanvas);
+    }
+
+    function attachCursorEvents(canvas, tooltip, getTooltipHtml) {
+      if (!canvas) return;
+
+      function handleMove(e) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const padLeft = 45;
+        const padRight = 35;
+        const plotW = rect.width - padLeft - padRight;
+        const ratio = clamp((mouseX - padLeft) / plotW, 0, 1);
+        cursorIdx = Math.round(ratio * (series.length - 1));
+
+        updateAllPanels();
+
+        if (tooltip) {
+          tooltip.style.display = 'block';
+          tooltip.style.left = `${Math.min(rect.width - 220, mouseX + 14)}px`;
+          tooltip.style.top = `${Math.max(10, mouseY - 40)}px`;
+          tooltip.innerHTML = getTooltipHtml(series[cursorIdx]);
+        }
+      }
+
+      canvas.addEventListener('mousemove', handleMove);
+      canvas.addEventListener('mouseleave', () => {
+        if (tooltip) tooltip.style.display = 'none';
+      });
+
+      canvas.addEventListener('touchmove', e => {
+        if (e.touches.length > 0) {
+          const touch = e.touches[0];
+          handleMove({ clientX: touch.clientX, clientY: touch.clientY });
+        }
+      });
+      canvas.addEventListener('touchend', () => {
+        if (tooltip) tooltip.style.display = 'none';
+      });
+    }
+
+    const trendTooltipFn = pt => `
+      <b>Instante: ${pt.time}</b><br>
+      Throughput: <b>${fmt(pt.throughput, 0)} t/h</b><br>
+      Ritmo A: ${fmt(pt.rateA, 0)} t/h | B: ${fmt(pt.rateB, 0)} t/h | C: ${fmt(pt.rateC, 0)} t/h<br>
+      <span style="color:#fb7185">Risco de Perda de Meta: <b>${fmt(pt.risk, 0)}%</b></span>
+    `;
+
+    const bufferTooltipFn = pt => `
+      <b>Instante: ${pt.time}</b><br>
+      Buffer AB: <b>${fmt(pt.ab, 0)} t</b> (${fmt(pt.autoAB, 0)} min de proteção)<br>
+      Buffer BC: <b>${fmt(pt.bc, 0)} t</b> (${fmt(pt.autoBC, 0)} min de proteção)
+    `;
+
+    const cumTooltipFn = pt => `
+      <b>Instante: ${pt.time}</b><br>
+      Produção Acumulada: <b>${fmt(pt.prodCum, 0)} t</b><br>
+      Meta Parcial: ${fmt(pt.targetCum, 0)} t<br>
+      Gap: <b>${fmt(pt.prodCum - pt.targetCum, 0)} t</b>
+    `;
+
+    const shapTooltipFn = pt => `
+      <b>Explicabilidade SHAP (${pt.time})</b><br>
+      ${DRIVERS.map(d => `<span style="color:${d.color}">${d.label.split(' ')[0]}:</span> <b>+${fmt(pt[d.key], 1)} pp</b>`).join('<br>')}
+    `;
+
+    attachCursorEvents(dom.trendCanvas, dom.trendTip, trendTooltipFn);
+    attachCursorEvents(dom.trendCanvasRates, dom.trendTipRates, trendTooltipFn);
+    attachCursorEvents(dom.bufferCanvas, dom.bufferTip, bufferTooltipFn);
+    attachCursorEvents(dom.bufferCanvasIsolated, dom.bufferTipIsolated, bufferTooltipFn);
+    attachCursorEvents(dom.cumCanvas, dom.cumTip, cumTooltipFn);
+    attachCursorEvents(dom.cumCanvasIsolated, dom.cumTipIsolated, cumTooltipFn);
+    attachCursorEvents(dom.shapCanvas, dom.shapTip, shapTooltipFn);
+    attachCursorEvents(dom.shapCanvasIsolated, dom.shapTipIsolated, shapTooltipFn);
+    attachCursorEvents(dom.focusMainCanvas, dom.focusMainTip, pt => {
+      if (currentFocusChart === 'buffer') return bufferTooltipFn(pt);
+      if (currentFocusChart === 'cum') return cumTooltipFn(pt);
+      if (currentFocusChart === 'shap') return shapTooltipFn(pt);
+      return trendTooltipFn(pt);
+    });
+
+    function setupSimulatorEvents() {
+      if (dom.sliderA) dom.sliderA.addEventListener('input', e => {
+        simParams.targetRateA = Number(e.target.value);
+        if (dom.valA) dom.valA.textContent = `${simParams.targetRateA} t/h`;
+        logDecision('Simulador', `Setpoint de alimentação em A alterado para ${simParams.targetRateA} t/h.`);
+        recalcSimulation();
+      });
+
+      if (dom.sliderAB) dom.sliderAB.addEventListener('input', e => {
+        simParams.initialBufferAB = Number(e.target.value);
+        if (dom.valAB) dom.valAB.textContent = `${simParams.initialBufferAB} t`;
+        logDecision('Simulador', `Nível do pulmão AB reajustado para ${simParams.initialBufferAB} t.`);
+        recalcSimulation();
+      });
+
+      if (dom.sliderB) dom.sliderB.addEventListener('input', e => {
+        simParams.effB = Number(e.target.value);
+        if (dom.valB) dom.valB.textContent = `${simParams.effB}%`;
+        logDecision('Simulador', `Meta de OEE do Reator B configurada para ${simParams.effB}%.`);
+        recalcSimulation();
+      });
+
+      if (dom.sliderBC) dom.sliderBC.addEventListener('input', e => {
+        simParams.initialBufferBC = Number(e.target.value);
+        if (dom.valBC) dom.valBC.textContent = `${simParams.initialBufferBC} t`;
+        logDecision('Simulador', `Nível do pulmão BC reajustado para ${simParams.initialBufferBC} t.`);
+        recalcSimulation();
+      });
+
+      if (dom.sliderC) dom.sliderC.addEventListener('input', e => {
+        simParams.targetRateC = Number(e.target.value);
+        if (dom.valC) dom.valC.textContent = `${simParams.targetRateC} t/h`;
+        logDecision('Simulador', `Demanda alvo em C ajustada para ${simParams.targetRateC} t/h.`);
+        recalcSimulation();
+      });
+    }
+
+    window.injectShock = function(type) {
+      if (type === 'reset') {
+        simParams.shockEvent = null;
+        simParams.targetRateA = 240;
+        simParams.initialBufferAB = 160;
+        simParams.effB = 88;
+        simParams.initialBufferBC = 120;
+        simParams.targetRateC = 200;
+
+        if (dom.sliderA) { dom.sliderA.value = 240; if (dom.valA) dom.valA.textContent = '240 t/h'; }
+        if (dom.sliderAB) { dom.sliderAB.value = 160; if (dom.valAB) dom.valAB.textContent = '160 t'; }
+        if (dom.sliderB) { dom.sliderB.value = 88; if (dom.valB) dom.valB.textContent = '88%'; }
+        if (dom.sliderBC) { dom.sliderBC.value = 120; if (dom.valBC) dom.valBC.textContent = '120 t'; }
+        if (dom.sliderC) { dom.sliderC.value = 200; if (dom.valC) dom.valC.textContent = '200 t/h'; }
+
+        if (dom.simBadge) {
+          dom.simBadge.className = 'badge ok';
+          dom.simBadge.textContent = 'Operação Nominal';
+        }
+        logDecision('Simulador', 'Cenário restaurado para condições nominais de projeto.');
+      } else {
+        simParams.shockEvent = type;
+        const msg = type === 'tripA' ? 'Choque: Falha em A' : type === 'bottleB' ? 'Choque: Gargalo B' : 'Choque: Demanda C';
+        if (dom.simBadge) {
+          dom.simBadge.className = 'badge danger';
+          dom.simBadge.textContent = msg;
+        }
+        logDecision('Simulador', `Injeção de distúrbio operacional forçado: ${msg}.`);
+      }
+      recalcSimulation();
+    };
+
+    function recalcSimulation() {
+      series = generateProcessSeries();
+      cursorIdx = series.length - 1;
+      updateAllPanels();
+    }
+
+    if (dom.playBtn) {
+      dom.playBtn.addEventListener('click', () => {
+        isLive = !isLive;
+        if (isLive) {
+          dom.playBtn.classList.add('active-live');
+          if (dom.playIcon) dom.playIcon.textContent = '⏸';
+          if (dom.playText) dom.playText.textContent = 'Tempo Real: ON';
+          liveTimer = setInterval(() => {
+            const last = series[series.length - 1];
+            const timeParts = last.time.split(':').map(Number);
+            let newMm = timeParts[1] + 1;
+            let newHh = timeParts[0];
+            if (newMm >= 60) { newMm = 0; newHh = (newHh + 1) % 24; }
+            const newTimeStr = `${String(newHh).padStart(2, '0')}:${String(newMm).padStart(2, '0')}`;
+
+            const rateA = clamp(simParams.targetRateA + randomGaussian(0, 4), 100, CAPACITIES.capA);
+            const nominalB = (CAPACITIES.capB * (simParams.effB / 100)) + randomGaussian(0, 3);
+            const ab = clamp(last.ab + (rateA - nominalB)/60, 0, CAPACITIES.capAB);
+            const rateB = (ab < 10) ? nominalB * 0.5 : nominalB;
+
+            const nominalC = simParams.targetRateC + randomGaussian(0, 3);
+            const bc = clamp(last.bc + (rateB - nominalC)/60, 0, CAPACITIES.capBC);
+            const rateC = (bc < 10) ? nominalC * 0.5 : nominalC;
+
+            const prodCum = last.prodCum + rateC / 60;
+            const targetCum = last.targetCum + CAPACITIES.targetFinal / 60;
+            const autoAB = rateB > 0 ? (ab / (rateB / 60)) : 999;
+            const autoBC = rateC > 0 ? (bc / (rateC / 60)) : 999;
+
+            const risk = clamp(last.risk + randomGaussian(0, 2), 5, 95);
+
+            series.shift();
+            series.push({
+              time: newTimeStr,
+              rateA: Number(rateA.toFixed(1)),
+              rateB: Number(rateB.toFixed(1)),
+              rateC: Number(rateC.toFixed(1)),
+              throughput: Number(rateC.toFixed(1)),
+              ab: Number(ab.toFixed(1)),
+              bc: Number(bc.toFixed(1)),
+              autoAB: Number(autoAB.toFixed(1)),
+              autoBC: Number(autoBC.toFixed(1)),
+              oeeA: Number((89 + randomGaussian(0, 2)).toFixed(1)),
+              oeeB: Number((simParams.effB + randomGaussian(0, 2)).toFixed(1)),
+              oeeC: Number((91 + randomGaussian(0, 2)).toFixed(1)),
+              prodCum: Number(prodCum.toFixed(1)),
+              targetCum: Number(targetCum.toFixed(1)),
+              risk: Number(risk.toFixed(1)),
+              shap_A: Number((last.shap_A * 0.95 + Math.random() * 1.5).toFixed(1)),
+              shap_AB: Number((last.shap_AB * 0.95 + Math.random() * 1.5).toFixed(1)),
+              shap_B: Number((last.shap_B * 0.95 + Math.random() * 1.5).toFixed(1)),
+              shap_BC: Number((last.shap_BC * 0.95 + Math.random() * 1.5).toFixed(1)),
+              shap_C: Number((last.shap_C * 0.95 + Math.random() * 1.5).toFixed(1)),
+              shap_SYS: Number((last.shap_SYS * 0.95 + Math.random() * 0.8).toFixed(1)),
+              starvedB: ab < 15,
+              starvedC: bc < 15
+            });
+
+            cursorIdx = series.length - 1;
+            updateAllPanels();
+          }, 1200);
+        } else {
+          dom.playBtn.classList.remove('active-live');
+          if (dom.playIcon) dom.playIcon.textContent = '▶';
+          if (dom.playText) dom.playText.textContent = 'Tempo Real: OFF';
+          clearInterval(liveTimer);
+        }
+      });
+    }
+
+    if (dom.regenBtn) dom.regenBtn.addEventListener('click', () => {
+      logDecision('Operador', 'Novo sorteio estocástico de variáveis de processo acionado.');
+      recalcSimulation();
+    });
+
+    if (dom.themeBtn) {
+      dom.themeBtn.addEventListener('click', () => {
+        theme = theme === 'dark' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', theme);
+        if (dom.themeIcon) dom.themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+        if (dom.themeText) dom.themeText.textContent = theme === 'dark' ? 'Modo Claro' : 'Modo Escuro';
+        updateAllPanels();
+      });
+    }
+
+    if (dom.guideBtn) {
+      dom.guideBtn.addEventListener('click', () => {
+        const isGuideOn = document.body.getAttribute('data-help') !== 'off';
+        document.body.setAttribute('data-help', isGuideOn ? 'off' : 'on');
+        if (dom.guideText) dom.guideText.textContent = isGuideOn ? 'Guia: OFF' : 'Guia: ON';
+      });
+    }
+
+    function setAiDockState(isOpen) {
+      isAiDockOpen = isOpen;
+      if (isOpen) {
+        dom.aiDock.classList.remove('collapsed');
+        dom.toggleAiBtn.classList.add('active');
+        dom.aiBtnText.textContent = 'Assistente IA: ON';
+      } else {
+        dom.aiDock.classList.add('collapsed');
+        dom.toggleAiBtn.classList.remove('active');
+        dom.aiBtnText.textContent = 'Assistente IA: OFF';
+      }
+      setTimeout(updateAllPanels, 360);
+    }
+
+    if (dom.toggleAiBtn) {
+      dom.toggleAiBtn.addEventListener('click', () => {
+        setAiDockState(!isAiDockOpen);
+      });
+    }
+
+    if (dom.closeDockBtn) {
+      dom.closeDockBtn.addEventListener('click', () => {
+        setAiDockState(false);
+      });
+    }
+
+    function animationLoop() {
+      renderFlowDiagram();
+      requestAnimationFrame(animationLoop);
+    }
+
+    window.addEventListener('resize', updateAllPanels);
+
+    function logDecision(sender, text) {
+      const timeNow = series[cursorIdx] ? series[cursorIdx].time : new Date().toLocaleTimeString('pt-BR');
+      decisionAuditTrail.push({
+        timestamp: timeNow,
+        sender: sender,
+        action: text
+      });
+    }
+
+    function appendChatMessage(htmlContent, type = 'ai', tag = 'Telemetria') {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `chat-msg ${type}`;
+      
+      const timeNow = series[cursorIdx] ? series[cursorIdx].time : '--:--';
+      const headerTitle = type === 'user' ? 'Operador' : 'IA Operacional';
+
+      msgDiv.innerHTML = `
+        <div class="msg-header">
+          <span>${headerTitle}</span>
+          <span class="msg-tag">${type === 'user' ? timeNow : tag}</span>
+        </div>
+        <div>${htmlContent}</div>
+      `;
+
+      dom.chatMessages.appendChild(msgDiv);
+      dom.chatMessages.scrollTop = dom.chatMessages.scrollHeight;
+
+      logDecision(headerTitle, htmlContent.replace(/<[^>]*>?/gm, ' '));
+    }
+
+    function handleKeyPress(e) {
+      if (e.key === 'Enter') sendUserMessage();
+    }
+
+    function sendUserMessage() {
+      const text = dom.chatInput.value.trim();
+      if (!text) return;
+
+      appendChatMessage(text, 'user');
+      dom.chatInput.value = '';
+
+      setTimeout(() => {
+        const responseHtml = processOperationalQuery(text);
+        appendChatMessage(responseHtml, 'ai', 'Diagnóstico XAI');
+      }, 350);
+    }
+
+    window.askQuick = function(promptText) {
+      dom.chatInput.value = promptText;
+      sendUserMessage();
+    };
+
+    function processOperationalQuery(query) {
+      const q = query.toLowerCase();
+      const cur = series[cursorIdx] || series[series.length - 1];
+
+      const sortedShap = DRIVERS.map(d => ({
+        ...d,
+        val: cur[d.key]
+      })).sort((a, b) => b.val - a.val);
+      const topOfensor = sortedShap[0];
+
+      if (q.includes('risco') || q.includes('subiu') || q.includes('caiu') || q.includes('shap')) {
+        let riskComment = cur.risk > 45 ? 'em patamar crítico de alarme' : (cur.risk > 25 ? 'em estado de atenção preventiva' : 'dentro dos parâmetros nominais');
+        return `
+          No instante <b>${cur.time}</b>, o risco consolidado está em <b>${fmt(cur.risk, 0)}%</b> (${riskComment}).<br><br>
+          🔬 <b>Decomposição de Causa-Raiz (SHAP):</b><br>
+          • Principal ofensor: <b style="color:${topOfensor.color}">${topOfensor.label}</b> (+${fmt(topOfensor.val, 1)} pp de risco).<br>
+          • Segundo ofensor: ${sortedShap[1].label} (+${fmt(sortedShap[1].val, 1)} pp).<br><br>
+          💡 <i>Sugestão:</i> Atuar diretamente sobre ${topOfensor.label.split(' ')[0]} trará o maior alívio imediato no risco de meta.
+        `;
+      }
+
+      if (q.includes('buffer') || q.includes('pulmão') || q.includes('starvation') || q.includes('estoque')) {
+        const autoAbWarning = cur.autoAB < 15 ? '⚠️ <b>Risco Iminente de Starvation no Estágio B!</b>' : '✅ Nível adequado de segurança';
+        const autoBcWarning = cur.autoBC < 15 ? '⚠️ <b>Risco de Starvation no Estágio C!</b>' : '✅ Nível adequado de segurança';
+        return `
+          🔋 <b>Status dos Buffers Intermediários (${cur.time}):</b><br>
+          • <b>Buffer AB:</b> ${fmt(cur.ab, 0)} t (Autonomia: <b>${fmt(cur.autoAB, 0)} min</b>) — ${autoAbWarning}<br>
+          • <b>Buffer BC:</b> ${fmt(cur.bc, 0)} t (Autonomia: <b>${fmt(cur.autoBC, 0)} min</b>) — ${autoBcWarning}<br><br>
+          ${cur.starvedB ? '🚨 <i>Estágio B já está sofrendo corte de vazão por falta de matéria-prima!</i><br>' : ''}
+          ${cur.starvedC ? '🚨 <i>Estágio C (Envase final) está desabastecido pelo Buffer BC!</i><br>' : ''}
+          <button class="chat-action-btn" onclick="applyBufferRebalance()">⚡ Aplicar Rebalanceamento Automático de Buffers</button>
+        `;
+      }
+
+      if (q.includes('gargalo') || q.includes('taxa') || q.includes('ritmo') || q.includes('vazão') || q.includes('produção') || q.includes('oee')) {
+        let lowestStage = 'A';
+        let lowestVal = cur.rateA;
+        if (cur.rateB < lowestVal) { lowestStage = 'B'; lowestVal = cur.rateB; }
+        if (cur.rateC < lowestVal) { lowestStage = 'C'; lowestVal = cur.rateC; }
+
+        return `
+          ⚙️ <b>Diagnóstico de Regime dos Estágios (${cur.time}):</b><br>
+          • <b>Estágio A:</b> ${fmt(cur.rateA, 0)} t/h (OEE: ${fmt(cur.oeeA, 0)}%)<br>
+          • <b>Estágio B:</b> ${fmt(cur.rateB, 0)} t/h (OEE: ${fmt(cur.oeeB, 0)}%) ${cur.starvedB ? '[Starved]' : ''}<br>
+          • <b>Estágio C (Final):</b> ${fmt(cur.rateC, 0)} t/h (OEE: ${fmt(cur.oeeC, 0)}%) ${cur.starvedC ? '[Starved]' : ''}<br><br>
+          O <b>gargalo físico</b> atual é o <b>Estágio ${lowestStage}</b> operando em ${fmt(lowestVal, 0)} t/h frente à meta contratada de 200 t/h.
+        `;
+      }
+
+      if (q.includes('prescrição') || q.includes('contrafactual') || q.includes('ação') || q.includes('o que fazer') || q.includes('como resolver') || q.includes('reduzir o risco')) {
+        const primaryAction = topOfensor.key.includes('A') 
+          ? 'Elevar a taxa de alimentação em A para 255 t/h para recompor o pulmão downstream.'
+          : topOfensor.key.includes('AB')
+          ? 'Suavizar temporariamente o consumo de B em -10% até o Buffer AB ultrapassar 140 t.'
+          : topOfensor.key.includes('B')
+          ? 'Normalizar o OEE de B para 92% expurgando gargalos térmicos de conversão.'
+          : 'Readequar o plano de retirada em C alinhando ao influxo de BC.';
+
+        const gainPp = (topOfensor.val * 0.65).toFixed(1);
+
+        return `
+          🧠 <b>Prescrição Contrafactual ("Menor Esforço"):</b><br>
+          Para reverter o risco no instante ${cur.time}:<br>
+          👉 <b>Ação Recomendada:</b> ${primaryAction}<br>
+          📉 <b>Impacto Estimado:</b> Redução de <b>-${gainPp} pp</b> no Risco Global.<br><br>
+          <button class="chat-action-btn" onclick="applyPrescription('${topOfensor.key}')">🛠️ Executar Ajuste de Setpoint Prescrito</button>
+        `;
+      }
+
+      if (q.includes('resumo') || q.includes('turno') || q.includes('status') || q.includes('visão')) {
+        const gap = cur.prodCum - cur.targetCum;
+        const gapColor = gap >= 0 ? '#10b981' : '#ef4444';
+        return `
+          📊 <b>Resumo Executivo da Planta (${cur.time}):</b><br>
+          • <b>Produção Acumulada:</b> ${fmt(cur.prodCum, 0)} t / Meta: ${fmt(cur.targetCum, 0)} t (<span style="color:${gapColor}">${gap >= 0 ? '+' : ''}${fmt(gap, 0)} t</span>)<br>
+          • <b>Throughput Final:</b> ${fmt(cur.throughput, 0)} t/h (Meta: 200 t/h)<br>
+          • <b>Risco Consolidado:</b> ${fmt(cur.risk, 0)}% (Ofensor crítico: ${topOfensor.label.split(' ')[0]})<br>
+          • <b>Condição dos Estoques:</b> AB: ${fmt(cur.ab, 0)} t | BC: ${fmt(cur.bc, 0)} t
+        `;
+      }
+
+      return `
+        Entendido. Analisando os dados da telemetria no instante <b>${cur.time}</b>:<br>
+        O throughput está em <b>${fmt(cur.throughput, 0)} t/h</b> com risco de inadimplência em <b>${fmt(cur.risk, 0)}%</b>.<br>
+        O componente com maior sensibilidade no momento é <b>${topOfensor.label}</b> (+${fmt(topOfensor.val, 1)} pp).<br><br>
+        <i>Você pode perguntar sobre o "Buffer AB", "Gargalo atual", "Por que o risco subiu" ou pedir uma "Ação prescritiva".</i>
+      `;
+    }
+
+    window.applyBufferRebalance = function() {
+      simParams.initialBufferAB = Math.min(CAPACITIES.capAB, simParams.initialBufferAB + 40);
+      simParams.initialBufferBC = Math.min(CAPACITIES.capBC, simParams.initialBufferBC + 30);
+      if (dom.sliderAB) { dom.sliderAB.value = simParams.initialBufferAB; if (dom.valAB) dom.valAB.textContent = `${simParams.initialBufferAB} t`; }
+      if (dom.sliderBC) { dom.sliderBC.value = simParams.initialBufferBC; if (dom.valBC) dom.valBC.textContent = `${simParams.initialBufferBC} t`; }
+      
+      logDecision('Operador via Assistente', 'Rebalanceamento preventivo aplicado: AB (+40t) e BC (+30t).');
+      recalcSimulation();
+      appendChatMessage('✅ <b>Ação Executada:</b> Buffers intermediários AB (+40t) e BC (+30t) foram reabastecidos. O risco de starvation foi mitigado.', 'ai', 'Ação Confirmada');
+    };
+
+    window.applyPrescription = function(driverKey) {
+      if (driverKey.includes('A')) {
+        simParams.targetRateA = 260;
+        if (dom.sliderA) { dom.sliderA.value = 260; if (dom.valA) dom.valA.textContent = '260 t/h'; }
+      } else if (driverKey.includes('B')) {
+        simParams.effB = 96;
+        if (dom.sliderB) { dom.sliderB.value = 96; if (dom.valB) dom.valB.textContent = '96%'; }
+      } else if (driverKey.includes('AB')) {
+        simParams.initialBufferAB = 220;
+        if (dom.sliderAB) { dom.sliderAB.value = 220; if (dom.valAB) dom.valAB.textContent = '220 t'; }
+      } else {
+        simParams.targetRateC = 200;
+        if (dom.sliderC) { dom.sliderC.value = 200; if (dom.valC) dom.valC.textContent = '200 t/h'; }
+      }
+
+      logDecision('Prescrição Contrafactual', `Setpoints reajustados para neutralizar driver: ${driverKey}.`);
+      recalcSimulation();
+      appendChatMessage(`✅ <b>Prescrição Aplicada:</b> Parâmetros reconfigurados no Estúdio de Simulação para neutralizar o driver <b>${driverKey}</b>. Risco em declínio.`, 'ai', 'Otimização Realizada');
+    };
+
+    /* =========================================================================
+       SISTEMA COMPLETO DE AUDITORIA & SNAPSHOT PDF EM MÚLTIPLAS PÁGINAS LIMPAS
+       ========================================================================= */
+    window.openSnapshotModal = function() {
+      const cur = series[cursorIdx] || series[series.length - 1];
+      const now = new Date();
+      const timestampStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
+      const shiftStr = (now.getHours() >= 6 && now.getHours() < 14) ? 'Turno 1 (Manhã)' : (now.getHours() >= 14 && now.getHours() < 22) ? 'Turno 2 (Tarde)' : 'Turno 3 (Noite)';
+      const hashAuth = 'AUTH-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+
+      // Renderizar bitmaps fiéis
+      const flowImg = dom.flowCanvas ? dom.flowCanvas.toDataURL('image/png') : '';
+      const trendImg = dom.trendCanvas ? dom.trendCanvas.toDataURL('image/png') : '';
+      const bufferImg = dom.bufferCanvas ? dom.bufferCanvas.toDataURL('image/png') : '';
+      const cumImg = dom.cumCanvas ? dom.cumCanvas.toDataURL('image/png') : '';
+      const waterfallImg = dom.waterfallCanvas ? dom.waterfallCanvas.toDataURL('image/png') : '';
+      const shapImg = dom.shapCanvas ? dom.shapCanvas.toDataURL('image/png') : '';
+
+      const sortedDrivers = DRIVERS.map(d => ({
+        ...d,
+        val: cur[d.key]
+      })).sort((a, b) => b.val - a.val);
+
+      const driversRows = sortedDrivers.map((d, idx) => {
+        const severity = d.val > 15 ? 'Crítico (Prioridade Alta)' : (d.val > 6 ? 'Moderado' : 'Estável');
+        const color = d.val > 15 ? '#b91c1c' : (d.val > 6 ? '#b45309' : '#15803d');
+        return `
+          <tr>
+            <td><b>${idx + 1}º</b></td>
+            <td><span style="display:inline-block; width:10px; height:10px; background:${d.hex}; border-radius:2px; margin-right:5px;"></span>${d.label}</td>
+            <td><b>+${fmt(d.val, 1)} pp</b></td>
+            <td style="color:${color}; font-weight:700;">${severity}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const auditRows = decisionAuditTrail.slice(-8).map(item => `
+        <div class="rep-chat-item ${item.sender.includes('Operador') ? 'user' : ''}">
+          <div style="display:flex; justify-content:space-between; font-weight:700; color:#475569; margin-bottom:2px;">
+            <span>[${item.sender}]</span>
+            <span>${item.timestamp}</span>
+          </div>
+          <div>${item.action}</div>
+        </div>
+      `).join('');
+
+      const modalHtml = `
+        <div class="report-sheet">
+
+          <!-- PÁGINA 1: CABEÇALHO, KPIS E DIAGRAMA TOPOLÓGICO -->
+          <div class="rep-header">
+            <div>
+              <h1>Relatório de Auditoria e Snapshot Operacional XAI</h1>
+              <p>Cadeia de Produção Contínua A → B → C • Monitoramento Estocástico & Diagnóstico de Causa-Raiz</p>
+            </div>
+            <div class="rep-meta-box">
+              <div><b>Data/Hora Emissão:</b> ${timestampStr}</div>
+              <div><b>Instante Congelado na Linha:</b> ${cur.time}</div>
+              <div><b>Operação:</b> ${shiftStr}</div>
+              <div><b>Autenticação:</b> <code>${hashAuth}</code></div>
+              <div>
+                <span class="rep-stamp ${cur.risk >= 40 ? 'alarm' : 'ok'}">
+                  ${cur.risk >= 40 ? 'Alarme Crítico de Meta' : 'Envelope Nominal Estável'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grade de Telemetria e KPIs Instantâneos -->
+          <div class="rep-kpi-grid">
+            <div class="rep-kpi-card">
+              <div class="l">Alimentação A</div>
+              <div class="v">${fmt(cur.rateA, 0)} t/h</div>
+              <div class="s">OEE: <b>${fmt(cur.oeeA, 0)}%</b></div>
+            </div>
+            <div class="rep-kpi-card">
+              <div class="l">Buffer AB</div>
+              <div class="v">${fmt(cur.ab, 0)} t</div>
+              <div class="s">Auton: <b>${fmt(cur.autoAB, 0)} min</b></div>
+            </div>
+            <div class="rep-kpi-card">
+              <div class="l">Reator B</div>
+              <div class="v">${fmt(cur.rateB, 0)} t/h</div>
+              <div class="s">${cur.starvedB ? '<b style="color:#ef4444">STARVATION</b>' : 'OEE: ' + fmt(cur.oeeB, 0) + '%'}</div>
+            </div>
+            <div class="rep-kpi-card">
+              <div class="l">Buffer BC</div>
+              <div class="v">${fmt(cur.bc, 0)} t</div>
+              <div class="s">Auton: <b>${fmt(cur.autoBC, 0)} min</b></div>
+            </div>
+            <div class="rep-kpi-card">
+              <div class="l">Throughput Final (C)</div>
+              <div class="v">${fmt(cur.throughput, 0)} t/h</div>
+              <div class="s">Acum: <b>${fmt(cur.prodCum, 0)} t</b></div>
+            </div>
+            <div class="rep-kpi-card" style="border-color:${cur.risk >= 40 ? '#ef4444' : '#10b981'}">
+              <div class="l" style="color:${cur.risk >= 40 ? '#dc2626' : '#059669'}">Risco de Perda</div>
+              <div class="v" style="color:${cur.risk >= 40 ? '#dc2626' : '#059669'}">${fmt(cur.risk, 0)}%</div>
+              <div class="s">Base SHAP: 18%</div>
+            </div>
+          </div>
+
+          <!-- Parâmetros de Simulação What-If Ativos -->
+          <div class="rep-section">
+            <h3><span>⚙️ Parâmetros Ativos do Simulador What-If</span> <span style="font-size:0.68rem; font-weight:normal; color:#64748b;">Condição no Instante ${cur.time}</span></h3>
+            <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; font-size:0.7rem; text-align:center;">
+              <div style="background:#f8fafc; padding:6px; border-radius:4px; border:1px solid #e2e8f0;">
+                <span style="color:#64748b; font-size:0.62rem; display:block;">Setpoint A</span>
+                <b>${simParams.targetRateA} t/h</b>
+              </div>
+              <div style="background:#f8fafc; padding:6px; border-radius:4px; border:1px solid #e2e8f0;">
+                <span style="color:#64748b; font-size:0.62rem; display:block;">Carga Inicial AB</span>
+                <b>${simParams.initialBufferAB} t</b>
+              </div>
+              <div style="background:#f8fafc; padding:6px; border-radius:4px; border:1px solid #e2e8f0;">
+                <span style="color:#64748b; font-size:0.62rem; display:block;">OEE Reator B</span>
+                <b>${simParams.effB}%</b>
+              </div>
+              <div style="background:#f8fafc; padding:6px; border-radius:4px; border:1px solid #e2e8f0;">
+                <span style="color:#64748b; font-size:0.62rem; display:block;">Carga Inicial BC</span>
+                <b>${simParams.initialBufferBC} t</b>
+              </div>
+              <div style="background:#f8fafc; padding:6px; border-radius:4px; border:1px solid #e2e8f0;">
+                <span style="color:#64748b; font-size:0.62rem; display:block;">Demanda Alvo C</span>
+                <b>${simParams.targetRateC} t/h</b>
+              </div>
+            </div>
+          </div>
+
+          <!-- Topologia Físico-Estocástica SCADA -->
+          <div class="rep-section">
+            <h3><span>🏭 Topologia Físico-Estocástica Congelada (SCADA View)</span> <span style="font-size:0.68rem; font-weight:normal; color:#64748b;">Fluxo de massa e status dos pulmões</span></h3>
+            <img src="${flowImg}" style="width:100%; max-height:150px; object-fit:contain; background:#090d16; border-radius:4px; display:block;" />
+          </div>
+
+          <div class="page-break"></div>
+
+          <!-- PÁGINA 2: GRÁFICOS ANALÍTICOS TEMPORAIS & FORECAST -->
+          <div class="rep-header" style="border-bottom-width: 1.5px; margin-top: 15px;">
+            <div>
+              <h2 style="font-size:1.1rem; font-weight:800; color:#0f172a;">Dinâmicas Temporais & Previsibilidade de Lote</h2>
+              <p>Comportamento do processo contínuo e propagação de atrasos</p>
+            </div>
+            <div class="rep-meta-box">
+              <div><b>Snapshot:</b> ${cur.time}</div>
+              <div><b>Autenticação:</b> <code>${hashAuth}</code></div>
+            </div>
+          </div>
+
+          <div class="rep-charts-2x2">
+            <div class="rep-chart-box">
+              <h4>Dinâmica Temporal das Plantas vs Risco (%)</h4>
+              <img src="${trendImg}" />
+            </div>
+            <div class="rep-chart-box">
+              <h4>Volume & Autonomia dos Buffers AB e BC</h4>
+              <img src="${bufferImg}" />
+            </div>
+            <div class="rep-chart-box">
+              <h4>Produção Acumulada vs Meta Contratada (Forecast)</h4>
+              <img src="${cumImg}" />
+            </div>
+            <div class="rep-chart-box">
+              <h4>Decomposição Temporal Aditiva SHAP (+pp Risco)</h4>
+              <img src="${shapImg}" />
+            </div>
+          </div>
+
+          <div class="page-break"></div>
+
+          <!-- PÁGINA 3: EXPLICABILIDADE XAI, PRESCRIÇÕES CONTRAFACTUAIS & AUDITORIA -->
+          <div class="rep-header" style="border-bottom-width: 1.5px; margin-top: 15px;">
+            <div>
+              <h2 style="font-size:1.1rem; font-weight:800; color:#0f172a;">Explicabilidade SHAP, Prescrições Contrafactuais & Auditoria</h2>
+              <p>Decomposição de causa-raiz, prescrições de menor esforço e trilha de decisões</p>
+            </div>
+            <div class="rep-meta-box">
+              <div><b>Snapshot:</b> ${cur.time}</div>
+              <div><b>Autenticação:</b> <code>${hashAuth}</code></div>
+            </div>
+          </div>
+
+          <div class="rep-charts-2x2" style="grid-template-columns: 1.1fr 0.9fr;">
+            <div class="rep-chart-box">
+              <h4>Waterfall SHAP no Instante Congelado (${cur.time})</h4>
+              <img src="${waterfallImg}" />
+            </div>
+            <div class="rep-section" style="margin-bottom:0;">
+              <h3 style="border-bottom:1px solid #e2e8f0; margin-bottom:6px;">Ranking Ponderado de Ofensores (SHAP)</h3>
+              <table class="rep-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Driver / Componente</th>
+                    <th>Impacto</th>
+                    <th>Criticidade</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${driversRows}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="rep-section" style="margin-top:12px;">
+            <h3>Recomendações Prescritivas Contrafactuais ("What-If Prescritivo")</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px;">
+              <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <b style="font-size:0.76rem; color:#0f172a;">Ação Prioritária: Intervenção em ${sortedDrivers[0].label.split(' ')[0]}</b>
+                  <span style="font-size:0.75rem; font-weight:800; color:#15803d;">-${(sortedDrivers[0].val * 0.65).toFixed(1)} pp Risco</span>
+                </div>
+                <p style="font-size:0.72rem; color:#475569; margin-top:4px;">
+                  ${sortedDrivers[0].key.includes('A') 
+                    ? 'Aumentar alimentação em +25 t/h e normalizar blend upstream para recomposição do estoque intermediário.'
+                    : sortedDrivers[0].key.includes('AB')
+                    ? 'Reconstituir pulmão AB via amortecimento transitório do Reator B evitando desabastecimento.'
+                    : sortedDrivers[0].key.includes('B')
+                    ? 'Sanar microparadas no Estágio B restabelecendo OEE acima de 92%.'
+                    : 'Rebalancear cadência do estágio final C com a capacidade real de influxo do Silo BC.'}
+                </p>
+              </div>
+              <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <b style="font-size:0.76rem; color:#0f172a;">Ação Secundária Preventiva</b>
+                  <span style="font-size:0.75rem; font-weight:800; color:#15803d;">-${(sortedDrivers[1].val * 0.5).toFixed(1)} pp Risco</span>
+                </div>
+                <p style="font-size:0.72rem; color:#475569; margin-top:4px;">
+                  Suavizar setpoints transitórios para amortecer o choque de massa e manter estabilidade estocástica.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="rep-section" style="margin-top:12px;">
+            <h3>Registro de Auditoria: Diálogos & Comandos do Assistente de IA</h3>
+            <div class="rep-chat-trail">
+              ${auditRows}
+            </div>
+          </div>
+
+          <div style="margin-top:20px; padding-top:8px; border-top:1px solid #e2e8f0; font-size:0.65rem; color:#94a3b8; text-align:center;">
+            Relatório de Auditoria Operacional emitido pelo Sistema Process Chain XAI & AI Copilot • Centro Integrado de Operações • Autenticação: <code>${hashAuth}</code>
+          </div>
+
+        </div>
+      `;
+
+      dom.snapshotModalContent.innerHTML = modalHtml;
+      dom.snapshotModal.classList.add('open');
+    };
+
+    window.closeSnapshotModal = function() {
+      dom.snapshotModal.classList.remove('open');
+    };
+
+    window.executeNativePrint = function() {
+      window.print();
+    };
+
+    window.onload = function() {
+      initFlowParticles();
+      setupSimulatorEvents();
+      recalcSimulation();
+      animationLoop();
+      setAiDockState(true);
+    };
+  </script>
+</body>
+</html>

@@ -26,15 +26,15 @@ export const AlertsBanner: React.FC<AlertsBannerProps> = ({
       >
         <div className="flex items-center gap-2.5 text-emerald-700 dark:text-emerald-300">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
-          <span className="font-semibold">Operação Nominal</span>
+          <span className="font-semibold">Nominal Operation</span>
           <span aria-hidden="true" className="text-slate-400">·</span>
           <span className="text-xs text-slate-600 dark:text-slate-300">
-            Nenhum desvio de vazão, risco de starvation ou violação de meta detectado no instante{' '}
+            No flow deviation, starvation risk, or target breach detected at{' '}
             <span className="font-mono font-semibold tabular-nums">{currentTime}</span>.
           </span>
         </div>
         <span className="font-mono text-xs text-emerald-700 tabular-nums dark:text-emerald-400">
-          0 alertas ativos
+          0 active alerts
         </span>
       </section>
     );
@@ -59,13 +59,13 @@ export const AlertsBanner: React.FC<AlertsBannerProps> = ({
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
           )}
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-            Alertas Visuais em Tempo Real · Instante{' '}
+            Real-Time Visual Alerts · Instant{' '}
             <span className="font-mono tabular-nums">{currentTime}</span>
           </h2>
           <span className="text-xs text-slate-600 dark:text-slate-300">
-            {criticalCount > 0 && `${criticalCount} crítico${criticalCount > 1 ? 's' : ''}`}
+            {criticalCount > 0 && `${criticalCount} critical`}
             {criticalCount > 0 && warningCount > 0 && ' · '}
-            {warningCount > 0 && `${warningCount} atenção`}
+            {warningCount > 0 && `${warningCount} warning`}
           </span>
         </div>
 
@@ -74,7 +74,7 @@ export const AlertsBanner: React.FC<AlertsBannerProps> = ({
           onClick={() => setExpanded((prev) => !prev)}
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300/70 bg-white/80 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-white dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:bg-slate-800 whitespace-nowrap shrink-0"
         >
-          <span>{expanded ? 'Recolher detalhes' : `Ver ${alerts.length} desvios`}</span>
+          <span>{expanded ? 'Collapse details' : `View ${alerts.length} deviations`}</span>
           {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
         </button>
       </div>
@@ -101,7 +101,7 @@ export const AlertsBanner: React.FC<AlertsBannerProps> = ({
                           : 'text-amber-600 dark:text-amber-400'
                       }`}
                     >
-                      {isCrit ? '✖ Crítico' : '▲ Atenção'}
+                      {isCrit ? '✖ Critical' : '▲ Warning'}
                     </span>
                     <span aria-hidden="true" className="text-slate-400">·</span>
                     <span className="font-mono text-[11px] font-semibold text-slate-700 tabular-nums dark:text-slate-200">

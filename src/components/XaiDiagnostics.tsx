@@ -45,8 +45,8 @@ export const XaiDiagnostics: React.FC<XaiDiagnosticsProps> = ({
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400">
                 {item.value > 12
-                  ? '▲ Ofensor crítico primário na janela congelada'
-                  : 'Impacto secundário no risco consolidado'}
+                  ? '▲ Primary critical offender in frozen window'
+                  : 'Secondary impact on consolidated risk'}
               </div>
             </div>
           );
@@ -56,7 +56,7 @@ export const XaiDiagnostics: React.FC<XaiDiagnosticsProps> = ({
       {!compact && (
         <div>
           <h4 className="mb-2 text-xs font-bold tracking-wide text-slate-600 uppercase dark:text-slate-400">
-            Prescrições Contrafactuais ("What-If Prescritivo")
+            Counterfactual Prescriptions ("Prescriptive What-If")
           </h4>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {counterfactuals.map((sc) => (
@@ -75,7 +75,7 @@ export const XaiDiagnostics: React.FC<XaiDiagnosticsProps> = ({
                 <div className="flex items-center justify-between gap-2 pt-1">
                   <div>
                     <span className="block text-[11px] text-slate-500 dark:text-slate-400">
-                      Redução estimada:
+                      Estimated reduction:
                     </span>
                     <span className="font-mono text-lg font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
                       -{fmt(sc.gainPp, 1)} pp
@@ -87,7 +87,7 @@ export const XaiDiagnostics: React.FC<XaiDiagnosticsProps> = ({
                     className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-600 hover:text-white dark:text-emerald-300 dark:hover:bg-emerald-600 dark:hover:text-white whitespace-nowrap shrink-0 cursor-pointer"
                   >
                     {sc.gainPp > 0 ? <Check className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
-                    <span>Aplicar ajuste</span>
+                    <span>Apply Fix</span>
                   </button>
                 </div>
               </div>

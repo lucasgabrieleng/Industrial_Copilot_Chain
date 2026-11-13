@@ -58,10 +58,10 @@ export const ScadaFlowCanvas: React.FC<ScadaFlowCanvasProps> = ({
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             const width = rect.width;
             const height = rect.height;
-            ctx.clearRect(0, 0, width, height);
-
             const p = pointRef.current;
             const isDark = themeRef.current === 'dark';
+            ctx.fillStyle = isDark ? '#020617' : '#f8fafc';
+            ctx.fillRect(0, 0, width, height);
             const speedFactor = clamp(p.throughput / 185, 0.2, 1.5);
             phaseRef.current += 0.045 * speedFactor;
 
@@ -441,8 +441,8 @@ export const ScadaFlowCanvas: React.FC<ScadaFlowCanvasProps> = ({
             drawStage({
               x: xA,
               kind: 'A',
-              name: 'Estágio A',
-              sub: 'Alimentação',
+              name: 'Stage A',
+              sub: 'Feed / Milling',
               rate: p.rateA,
               cap: CAPACITIES.capA,
               oee: p.oeeA,
@@ -460,8 +460,8 @@ export const ScadaFlowCanvas: React.FC<ScadaFlowCanvasProps> = ({
             drawStage({
               x: xB,
               kind: 'B',
-              name: 'Estágio B',
-              sub: 'Reação / Massa',
+              name: 'Stage B',
+              sub: 'Reaction / Mass',
               rate: p.rateB,
               cap: CAPACITIES.capB,
               oee: p.oeeB,
@@ -480,8 +480,8 @@ export const ScadaFlowCanvas: React.FC<ScadaFlowCanvasProps> = ({
             drawStage({
               x: xC,
               kind: 'C',
-              name: 'Estágio C',
-              sub: 'Entrega Final',
+              name: 'Stage C',
+              sub: 'Final Delivery',
               rate: p.rateC,
               cap: CAPACITIES.capC,
               oee: p.oeeC,
@@ -502,7 +502,7 @@ export const ScadaFlowCanvas: React.FC<ScadaFlowCanvasProps> = ({
     <canvas
       ref={canvasRef}
       className="block h-full w-full"
-      aria-label="Diagrama físico-estocástico da cadeia de produção Estágio A, Buffer AB, Estágio B, Buffer BC e Estágio C"
+      aria-label="Physical-stochastic production chain diagram: Stage A, Buffer AB, Stage B, Buffer BC, and Stage C"
     />
   );
 };

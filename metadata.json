@@ -1,6 +1,6 @@
 {
   "name": "FluxChain XAI",
-  "description": "Monitoramento contínuo de transferência de massa (Estágio A → Buffer AB → Estágio B → Buffer BC → Estágio C), risco de inadimplência com atribuição aditiva SHAP, alertas em tempo real e copiloto operacional.",
+  "description": "Continuous mass-transfer monitoring (Stage A → Buffer AB → Stage B → Buffer BC → Stage C), target default risk with additive SHAP attribution, real-time alerts, and operational AI copilot.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

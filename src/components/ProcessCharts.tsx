@@ -200,7 +200,7 @@ export const TrendChart: React.FC<BaseChartProps> = ({
 
       ctx.textAlign = 'left';
       ctx.fillStyle = '#fb7185';
-      ctx.fillText('100% Risco', width - pad.right + 6, pad.top + 8);
+      ctx.fillText('100% Risk', width - pad.right + 6, pad.top + 8);
       ctx.fillText('50%', width - pad.right + 6, pad.top + plotH / 2 + 3);
       ctx.fillText('0%', width - pad.right + 6, height - pad.bottom);
 
@@ -229,15 +229,15 @@ export const TrendChart: React.FC<BaseChartProps> = ({
           style={{ left: hoverPos.x, top: hoverPos.y }}
         >
           <div className="mb-1 flex items-center justify-between font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-            <span>Instante {cur.time}</span>
-            <span className="text-rose-500">Risco {fmt(cur.risk, 0)}%</span>
+            <span>Instant {cur.time}</span>
+            <span className="text-rose-500">Risk {fmt(cur.risk, 0)}%</span>
           </div>
           <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 font-mono text-[11px] tabular-nums">
-            <span className="text-rose-500">Estágio A:</span>
+            <span className="text-rose-500">Stage A:</span>
             <span className="text-right font-semibold">{fmt(cur.rateA, 0)} t/h</span>
-            <span className="text-amber-500">Estágio B:</span>
+            <span className="text-amber-500">Stage B:</span>
             <span className="text-right font-semibold">{fmt(cur.rateB, 0)} t/h</span>
-            <span className="text-cyan-500">Estágio C:</span>
+            <span className="text-cyan-500">Stage C:</span>
             <span className="text-right font-semibold">{fmt(cur.rateC, 0)} t/h</span>
             <span className="text-sky-500">Throughput:</span>
             <span className="text-right font-bold">{fmt(cur.throughput, 0)} t/h</span>
@@ -348,7 +348,7 @@ export const BufferChart: React.FC<BaseChartProps> = ({
 
       ctx.fillStyle = '#ef4444';
       ctx.textAlign = 'left';
-      ctx.fillText('Zona Crítica', pad.left + 6, dangerY - 5);
+      ctx.fillText('Critical Zone', pad.left + 6, dangerY - 5);
 
       ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
       ctx.textAlign = 'center';
@@ -375,7 +375,7 @@ export const BufferChart: React.FC<BaseChartProps> = ({
           style={{ left: hoverPos.x, top: hoverPos.y }}
         >
           <div className="mb-1 font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-            Pulmões · {cur.time}
+            Buffers · {cur.time}
           </div>
           <div className="space-y-0.5 font-mono text-[11px] tabular-nums">
             <div className="flex justify-between gap-3">
@@ -519,19 +519,19 @@ export const CumulativeChart: React.FC<BaseChartProps> = ({
           style={{ left: hoverPos.x, top: hoverPos.y }}
         >
           <div className="mb-1 font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-            Acumulado · {cur.time}
+            Cumulative · {cur.time}
           </div>
           <div className="space-y-0.5 font-mono text-[11px] tabular-nums">
             <div className="flex justify-between gap-3">
-              <span className="text-sky-500">Realizado:</span>
+              <span className="text-sky-500">Actual:</span>
               <span className="font-semibold">{fmt(cur.prodCum, 0)} t</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span className="text-indigo-400">Meta Parcial:</span>
+              <span className="text-indigo-400">Partial Target:</span>
               <span className="font-semibold">{fmt(cur.targetCum, 0)} t</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span>Saldo:</span>
+              <span>Variance:</span>
               <span className={`font-bold ${gap >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {gap >= 0 ? '+' : ''}
                 {fmt(gap, 0)} t
@@ -639,7 +639,7 @@ export const ShapTimelineChart: React.FC<BaseChartProps> = ({
           style={{ left: hoverPos.x, top: hoverPos.y }}
         >
           <div className="mb-1 font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-            SHAP Aditivo · {cur.time}
+            Additive SHAP · {cur.time}
           </div>
           <div className="space-y-0.5 font-mono text-[11px] tabular-nums">
             {DRIVERS.map((d) => (
@@ -692,9 +692,9 @@ export const WaterfallChart: React.FC<WaterfallChartProps> = ({
         { label: 'Base', val: CAPACITIES.baselineRisk, color: '#64748b' },
         ...DRIVERS.map((d) => ({
           label: d.shortLabel
-            .replace('Estágio ', '')
+            .replace('Stage ', '')
             .replace('Buffer ', '')
-            .replace('Sistêmico', 'Sist.'),
+            .replace('Systemic', 'Syst.'),
           val: point[d.key],
           color: d.hex,
         })),
@@ -758,7 +758,7 @@ export const WaterfallChart: React.FC<WaterfallChartProps> = ({
 
       ctx.fillStyle = '#fb7185';
       ctx.font = '700 9.5px "IBM Plex Sans", system-ui';
-      ctx.fillText('Risco', xTot + barW / 2, height - 7);
+      ctx.fillText('Risk', xTot + barW / 2, height - 7);
 
       ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
       ctx.font = '500 9.5px "JetBrains Mono", monospace';
@@ -794,9 +794,9 @@ export const WaterfallChart: React.FC<WaterfallChartProps> = ({
           className="pointer-events-none absolute z-30 rounded-lg border border-slate-300 bg-white/95 px-2.5 py-2 font-mono text-[11px] text-slate-900 shadow-lg dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-100"
           style={{ left: tip.x, top: tip.y }}
         >
-          <div className="font-semibold">Composição SHAP ({point.time})</div>
+          <div className="font-semibold">SHAP Breakdown ({point.time})</div>
           <div className="text-slate-500 dark:text-slate-400">
-            Base {CAPACITIES.baselineRisk}% → Risco Total {fmt(point.risk, 0)}%
+            Base {CAPACITIES.baselineRisk}% → Total Risk {fmt(point.risk, 0)}%
           </div>
         </div>
       )}

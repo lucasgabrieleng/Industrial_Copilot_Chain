@@ -1,85 +1,85 @@
-# FluxChain XAI — Cadeia de Produção Contínua A → B → C
+# FluxChain XAI — Continuous Production Chain A → B → C
 
-Painel industrial interativo para monitoramento e simulação estocástica da dinâmica de transferência de massa em tempo contínuo ao longo de uma linha seriada (**Estágio A → Buffer AB → Estágio B → Buffer BC → Estágio C**). O motor calcula dinamicamente o **Risco Consolidado de Inadimplência da Meta Final** e decompõe aditivamente suas causas primárias com explicabilidade **SHAP**, permitindo intervenção preventiva antes que o esgotamento dos buffers (*starvation*) comprometa a entrega final.
-
----
-
-## Snapshots da Aplicação
-
-### 1. Visão Integrada, Topologia SCADA e Copiloto IA (Modo Escuro)
-Visão principal com controles de simulação, KPIs instantâneos, diagrama SCADA animado (silos com nível dinâmico, ondas de massa, rotores e balanço líquido Δ entre estágios), séries temporais sincronizadas e assistente operacional conectado à telemetria.
-
-![Visão Integrada e Topologia SCADA](./docs/snapshots/dashboard-overview-dark.png)
+Interactive industrial operations dashboard for monitoring and stochastic simulation of continuous mass-transfer dynamics along a serial production line (**Stage A → Buffer AB → Stage B → Buffer BC → Stage C**). The engine dynamically computes **Consolidated Final Target Default Risk** and additively decomposes its primary root causes using **SHAP** attribution, enabling operators to intervene before buffer depletion (*starvation*) halts final delivery.
 
 ---
 
-### 2. Alertas Visuais em Tempo Real, SHAP & Prescrição Contrafactual
-Detecção automática de desvios críticos (*starvation*, queda de autonomia abaixo de 15 min e risco elevado) com decomposição aditiva SHAP (temporal + waterfall) e recomendações contrafactuais acionáveis em 1 clique.
+## Application Snapshots
 
-![Alertas em Tempo Real e Decomposição SHAP](./docs/snapshots/deviation-alerts-shap.png)
+### 1. Integrated View, SCADA Topology & AI Copilot (Dark Mode)
+Main dashboard view featuring simulation controls, real-time KPI telemetry, animated SCADA topology (graduated silos with dynamic fluid waves, spinning equipment rotors, and net mass-balance Δ indicators), synchronized time-series charts, and the telemetry-connected operational AI assistant.
 
----
-
-### 3. Modo Foco & Tema Claro
-Modo de inspeção profunda para análise ampliada de qualquer série temporal ou gráfico Waterfall lado a lado com o ranking de ofensores SHAP no instante congelado pelo cursor.
-
-![Modo Foco em Tema Claro](./docs/snapshots/focus-mode-light.png)
+![Integrated View and SCADA Topology](./docs/snapshots/dashboard-overview-dark.png)
 
 ---
 
-### 4. Relatório Executivo e Snapshot de Auditoria (PDF)
-Exportação estruturada em múltiplas páginas A4 contendo cabeçalho de turno, KPIs congelados, parâmetros ativos do simulador What-If, captura da topologia SCADA, gráficos analíticos, tabela ponderada SHAP e registro de auditoria.
+### 2. Real-Time Visual Alerts, SHAP Attribution & Counterfactual Prescriptions
+Automated detection of critical deviations (*starvation*, buffer autonomy dropping below 15 min, and elevated target risk) paired with additive SHAP decomposition (temporal + waterfall) and one-click counterfactual mitigation actions.
 
-![Modal de Auditoria e Exportação PDF](./docs/snapshots/pdf-audit-snapshot.png)
-
----
-
-## Arquitetura e Funcionalidades
-
-- **Simulação Estocástica Contínua (`src/engine/processSimulation.ts`)**:
-  - Modela o fluxo de massa em t/h ao longo de 160 pontos temporais (com streaming em **Tempo Real** opcional a cada `1,2s`), acumulando e drenando os pulmões `AB` (capacidade `300 t`) e `BC` (capacidade `220 t`).
-  - Calcula autonomia em minutos, detecta condições de *starvation* nos estágios B e C e gera projeção acumulada com cone de incerteza contra a meta de `200 t/h`.
-- **Explicabilidade SHAP & Prescrições (`src/components/XaiDiagnostics.tsx`, `src/components/ProcessCharts.tsx`)**:
-  - Atribui de forma aditiva o desvio de risco acima do baseline (`18%`) entre os drivers `Estágio A`, `Buffer AB`, `Estágio B`, `Buffer BC`, `Estágio C` e `Instabilidade Sistêmica`.
-  - Cursor interativo sincronizado em todos os gráficos para congelar qualquer instante e inspecionar o **Waterfall SHAP** e o ranking de ofensores.
-- **Alertas em Tempo Real (`src/components/AlertsBanner.tsx`)**:
-  - Exibe alertas dinâmicos de severidade (`Crítico` / `Atenção`) com métricas em fonte tabular e botões diretos de mitigação (`Rebalancear Buffers` ou `Aplicar Ajuste Prescrito`).
-- **Estúdio What-If (`src/components/WhatIfStudio.tsx`)**:
-  - Ajuste em tempo real dos setpoints de alimentação em A, carga dos buffers AB/BC, OEE do estágio B e demanda alvo em C, além de injeção de choques rápidos (`Falha em A`, `Gargalo em B`, `Pico em C`).
-- **Copiloto IA Operacional (`server.ts`, `src/components/AiAssistantDock.tsx`)**:
-  - Endpoint server-side `POST /api/assistant` integrado ao `@google/genai` (`gemini-4-hydrogen`) com fallback determinístico local caso `GEMINI_API_KEY` não esteja configurada.
-- **Topologia SCADA em Canvas (`src/components/ScadaFlowCanvas.tsx`)**:
-  - Renderização High-DPI com partículas de escoamento, setas direcionais nos dutos, balanço líquido de massa (`Δ = Entrada − Saída`), rotores animados e silos industriais graduados.
+![Real-Time Alerts and SHAP Decomposition](./docs/snapshots/deviation-alerts-shap.png)
 
 ---
 
-## Stack Tecnológica
+### 3. Focus Mode & Light Theme
+Deep inspection mode displaying an expanded single time-series or Waterfall chart side-by-side with the top ranked SHAP drivers at the cursor-frozen instant.
 
-- **Frontend**: React 19, TypeScript, Tailwind CSS v4, Lucide Icons, HTML5 Canvas High-DPI
-- **Backend**: Node.js, Express, `@google/genai` (Gemini API server-side)
+![Focus Mode in Light Theme](./docs/snapshots/focus-mode-light.png)
+
+---
+
+### 4. Executive Audit Report & PDF Snapshot
+Multi-page A4 print-ready report capturing shift metadata, frozen KPIs, active What-If simulator parameters, SCADA topology snapshot, analytical charts, weighted SHAP ranking table, and operational audit trail.
+
+![Audit Report and PDF Export Modal](./docs/snapshots/pdf-audit-snapshot.png)
+
+---
+
+## Architecture & Key Features
+
+- **Continuous Stochastic Simulation (`src/engine/processSimulation.ts`)**:
+  - Models mass flow in t/h across 160 time steps (with optional **Live Streaming** every `1.2s`), accumulating and draining intermediate buffers `AB` (`300 t` capacity) and `BC` (`220 t` capacity).
+  - Computes buffer autonomy in minutes, detects *starvation* throttling in Stages B and C, and projects cumulative production with an uncertainty cone against the `200 t/h` target.
+- **SHAP Explainability & Prescriptions (`src/components/XaiDiagnostics.tsx`, `src/components/ProcessCharts.tsx`)**:
+  - Additively attributes risk above the `18%` natural baseline across `Stage A`, `Buffer AB`, `Stage B`, `Buffer BC`, `Stage C`, and `Systemic Instability`.
+  - Synchronized crosshair cursor across all charts to freeze any instant and inspect the **SHAP Waterfall** and driver ranking.
+- **Real-Time Visual Alerts (`src/components/AlertsBanner.tsx`)**:
+  - Surfaces dynamic severity alerts (`Critical` / `Warning`) with tabular numeric metrics and direct mitigation buttons (`Rebalance Buffers` or `Apply Prescribed Fix`).
+- **Interactive What-If Studio (`src/components/WhatIfStudio.tsx`)**:
+  - Real-time sliders for Stage A feed rate, Buffer AB/BC levels, Stage B OEE, and Stage C target demand, plus quick disturbance injection (`Failure in A`, `Bottleneck in B`, `Surge in C`).
+- **Operational AI Copilot (`server.ts`, `src/components/AiAssistantDock.tsx`)**:
+  - Server-side `POST /api/assistant` endpoint powered by `@google/genai` (`gemini-4-hydrogen`) with a deterministic local XAI fallback when `GEMINI_API_KEY` is not set.
+- **High-DPI SCADA Canvas (`src/components/ScadaFlowCanvas.tsx`)**:
+  - Crisp canvas rendering with laminar flow particles, directional conduit chevrons, net mass balance (`Δ = Inflow − Outflow`), animated equipment rotors, and graduated industrial silos.
+
+---
+
+## Tech Stack
+
+- **Frontend**: React 19, TypeScript, Tailwind CSS v4, Lucide Icons, High-DPI HTML5 Canvas
+- **Backend**: Node.js, Express, `@google/genai` (Server-side Gemini API)
 - **Build & Tooling**: Vite 8, `tsx`
 
 ---
 
-## Como Executar Localmente
+## Running Locally
 
-1. **Instale as dependências**:
+1. **Install dependencies**:
    ```bash
    npm install
    ```
 
-2. **Configure as variáveis de ambiente** (opcional para respostas generativas no Copiloto IA):
+2. **Configure environment variables** (optional for generative AI Copilot replies):
    ```bash
    cp .env.example .env
-   # Defina GEMINI_API_KEY no arquivo .env (sem chave, o copiloto usa o motor XAI local)
+   # Set GEMINI_API_KEY in .env (without a key, the copilot uses the local XAI engine)
    ```
 
-3. **Inicie o servidor de desenvolvimento** (porta `3000`):
+3. **Start the development server** (port `3000`):
    ```bash
    npm run dev
    ```
 
-4. **Verifique tipagem e build de produção**:
+4. **Type-check, build, and start production server**:
    ```bash
    npm run lint
    npm run build

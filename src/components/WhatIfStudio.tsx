@@ -15,12 +15,12 @@ export const WhatIfStudio: React.FC<WhatIfStudioProps> = ({
 }) => {
   const shockStatusText =
     simParams.shockEvent === 'tripA'
-      ? 'Choque ativo · Falha Primária em A'
+      ? 'Active Shock · Primary Failure in A'
       : simParams.shockEvent === 'bottleB'
-        ? 'Choque ativo · Gargalo no Reator B'
+        ? 'Active Shock · Bottleneck in Stage B'
         : simParams.shockEvent === 'surgeC'
-          ? 'Choque ativo · Pico de Demanda em C'
-          : 'Regime · Operação Nominal';
+          ? 'Active Shock · Demand Surge in C'
+          : 'Regime · Nominal Operation';
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
@@ -28,7 +28,7 @@ export const WhatIfStudio: React.FC<WhatIfStudioProps> = ({
         <div className="flex flex-wrap items-center gap-2.5">
           <SlidersHorizontal className="h-4 w-4 text-sky-500" />
           <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-            Estúdio de Simulação Interativa (What-If)
+            Interactive Simulation Studio (What-If)
           </h2>
           <span aria-hidden="true" className="text-slate-400">·</span>
           <span
@@ -44,7 +44,7 @@ export const WhatIfStudio: React.FC<WhatIfStudioProps> = ({
 
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Choques rápidos:
+            Quick shocks:
           </span>
           <button
             type="button"
@@ -56,7 +56,7 @@ export const WhatIfStudio: React.FC<WhatIfStudioProps> = ({
             }`}
           >
             <Zap className="h-3.5 w-3.5" />
-            <span>Falha em A</span>
+            <span>Failure in A</span>
           </button>
           <button
             type="button"
@@ -68,7 +68,7 @@ export const WhatIfStudio: React.FC<WhatIfStudioProps> = ({
             }`}
           >
             <TriangleAlert className="h-3.5 w-3.5" />
-            <span>Gargalo em B</span>
+            <span>Bottleneck in B</span>
           </button>
           <button
             type="button"
@@ -80,7 +80,7 @@ export const WhatIfStudio: React.FC<WhatIfStudioProps> = ({
             }`}
           >
             <TrendingUp className="h-3.5 w-3.5" />
-            <span>Pico em C</span>
+            <span>Surge in C</span>
           </button>
           <button
             type="button"
@@ -88,7 +88,7 @@ export const WhatIfStudio: React.FC<WhatIfStudioProps> = ({
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:border-slate-400 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300 dark:hover:text-white whitespace-nowrap shrink-0 cursor-pointer"
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            <span>Restaurar Padrões</span>
+            <span>Reset Defaults</span>
           </button>
         </div>
       </div>
@@ -97,7 +97,7 @@ export const WhatIfStudio: React.FC<WhatIfStudioProps> = ({
         <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/60">
           <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
             <label htmlFor="slider-a" className="font-medium text-slate-600 dark:text-slate-300">
-              Ritmo Estágio A
+              Stage A Rate
             </label>
             <span className="font-mono font-bold text-slate-900 tabular-nums dark:text-slate-100">
               {simParams.targetRateA} t/h
@@ -118,7 +118,7 @@ export const WhatIfStudio: React.FC<WhatIfStudioProps> = ({
         <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/60">
           <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
             <label htmlFor="slider-ab" className="font-medium text-slate-600 dark:text-slate-300">
-              Buffer Pulmão AB
+              Buffer AB Level
             </label>
             <span className="font-mono font-bold text-slate-900 tabular-nums dark:text-slate-100">
               {simParams.initialBufferAB} t
@@ -139,7 +139,7 @@ export const WhatIfStudio: React.FC<WhatIfStudioProps> = ({
         <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/60">
           <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
             <label htmlFor="slider-b" className="font-medium text-slate-600 dark:text-slate-300">
-              OEE Estágio B
+              Stage B OEE
             </label>
             <span className="font-mono font-bold text-slate-900 tabular-nums dark:text-slate-100">
               {simParams.effB}%
@@ -160,7 +160,7 @@ export const WhatIfStudio: React.FC<WhatIfStudioProps> = ({
         <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/60">
           <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
             <label htmlFor="slider-bc" className="font-medium text-slate-600 dark:text-slate-300">
-              Buffer Pulmão BC
+              Buffer BC Level
             </label>
             <span className="font-mono font-bold text-slate-900 tabular-nums dark:text-slate-100">
               {simParams.initialBufferBC} t
@@ -181,7 +181,7 @@ export const WhatIfStudio: React.FC<WhatIfStudioProps> = ({
         <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/60">
           <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
             <label htmlFor="slider-c" className="font-medium text-slate-600 dark:text-slate-300">
-              Demanda Alvo C
+              Target Demand C
             </label>
             <span className="font-mono font-bold text-slate-900 tabular-nums dark:text-slate-100">
               {simParams.targetRateC} t/h

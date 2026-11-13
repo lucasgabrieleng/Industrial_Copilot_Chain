@@ -9,12 +9,12 @@ import type {
 } from '../types/process';
 
 export const DRIVERS: DriverDefinition[] = [
-  { key: 'shap_A', shortLabel: 'Estágio A', label: 'Estágio A (Ritmo/Disponibilidade)', hex: '#f43f5e' },
-  { key: 'shap_AB', shortLabel: 'Buffer AB', label: 'Buffer AB (Nível/Starvation)', hex: '#f97316' },
-  { key: 'shap_B', shortLabel: 'Estágio B', label: 'Estágio B (OEE/Eficiência)', hex: '#eab308' },
-  { key: 'shap_BC', shortLabel: 'Buffer BC', label: 'Buffer BC (Nível/Starvation)', hex: '#10b981' },
-  { key: 'shap_C', shortLabel: 'Estágio C', label: 'Estágio C (Regime/Qualidade)', hex: '#06b6d4' },
-  { key: 'shap_SYS', shortLabel: 'Sistêmico', label: 'Instabilidade & Ruído Sistêmico', hex: '#a855f7' },
+  { key: 'shap_A', shortLabel: 'Stage A', label: 'Stage A (Feed Rate / Availability)', hex: '#f43f5e' },
+  { key: 'shap_AB', shortLabel: 'Buffer AB', label: 'Buffer AB (Level / Starvation)', hex: '#f97316' },
+  { key: 'shap_B', shortLabel: 'Stage B', label: 'Stage B (OEE / Efficiency)', hex: '#eab308' },
+  { key: 'shap_BC', shortLabel: 'Buffer BC', label: 'Buffer BC (Level / Starvation)', hex: '#10b981' },
+  { key: 'shap_C', shortLabel: 'Stage C', label: 'Stage C (Regime / Quality)', hex: '#06b6d4' },
+  { key: 'shap_SYS', shortLabel: 'Systemic', label: 'Systemic Instability & Noise', hex: '#a855f7' },
 ];
 
 export const CAPACITIES = {
@@ -41,7 +41,7 @@ export function clamp(val: number, min: number, max: number): number {
 }
 
 export function fmt(val: number, dec = 0): string {
-  return Number(val).toFixed(dec).replace('.', ',');
+  return Number(val).toFixed(dec);
 }
 
 function randomGaussian(mean = 0, stdev = 1): number {
@@ -321,25 +321,25 @@ export function buildCounterfactuals(point: ProcessPoint): CounterfactualAction[
   const secondary = ranked[1];
 
   const getPrescriptionDesc = (key: ShapDriverKey): string => {
-    if (key === 'shap_A') return 'Elevar alimentação do Estágio A para 255 t/h e estabilizar blend upstream';
-    if (key === 'shap_AB') return 'Reconstituir Buffer AB acima de 180 t amortecendo transientemente a retirada em B';
-    if (key === 'shap_B') return 'Sanar microparadas no Reator B elevando o OEE operacional para 94%';
-    if (key === 'shap_BC') return 'Reforçar pulmão BC acima de 140 t sincronizando o fluxo entre B e C';
-    if (key === 'shap_C') return 'Realinhar cadência de envase do Estágio C à meta nominal de 200 t/h';
-    return 'Suavizar malhas PID de controle para reduzir variância entre estágios';
+    if (key === 'shap_A') return 'Increase Stage A feed rate to 255 t/h and stabilize upstream blend';
+    if (key === 'shap_AB') return 'Replenish Buffer AB above 180 t by temporarily throttling Stage B draw';
+    if (key === 'shap_B') return 'Eliminate micro-stops in Reactor B to restore operational OEE to 94%';
+    if (key === 'shap_BC') return 'Reinforce Buffer BC above 140 t by synchronizing flow between B and C';
+    if (key === 'shap_C') return 'Realign Stage C packaging cadence to the 200 t/h nominal target';
+    return 'Smooth PID control loops to reduce inter-stage variance';
   };
 
   return [
     {
       id: `cf-${primary.key}`,
-      title: `Intervenção Direta · ${primary.shortLabel}`,
+      title: `Direct Intervention · ${primary.shortLabel}`,
       action: getPrescriptionDesc(primary.key),
       gainPp: Number((primary.value * 0.65).toFixed(1)),
       driverKey: primary.key,
     },
     {
       id: `cf-${secondary.key}`,
-      title: `Mitigação Secundária · ${secondary.shortLabel}`,
+      title: `Secondary Mitigation · ${secondary.shortLabel}`,
       action: getPrescriptionDesc(secondary.key),
       gainPp: Number((secondary.value * 0.5).toFixed(1)),
       driverKey: secondary.key,
@@ -358,13 +358,13 @@ export function detectDeviationAlerts(point: ProcessPoint): DeviationAlert[] {
       severity: 'critical',
       code: 'STARVATION_BC',
       title: point.starvedC
-        ? 'Desabastecimento Ativo no Estágio C (Starvation)'
-        : 'Buffer BC em Limiar Crítico de Esgotamento',
-      detail: `Pulmão BC com ${fmt(point.bc, 0)} t (${fmt(point.autoBC, 0)} min de autonomia). Entrega final sob risco imediato de parada.`,
+        ? 'Active Starvation at Stage C (Final Delivery)'
+        : 'Buffer BC at Critical Depletion Threshold',
+      detail: `Buffer BC holds ${fmt(point.bc, 0)} t (${fmt(point.autoBC, 0)} min autonomy). Final delivery faces imminent stoppage.`,
       metricValue: `${fmt(point.autoBC, 0)} min`,
       targetDriverKey: 'shap_BC',
       actionType: 'rebalance_buffers',
-      actionLabel: 'Rebalancear Buffers',
+      actionLabel: 'Rebalance Buffers',
     });
   }
 
@@ -374,13 +374,13 @@ export function detectDeviationAlerts(point: ProcessPoint): DeviationAlert[] {
       severity: 'critical',
       code: 'STARVATION_AB',
       title: point.starvedB
-        ? 'Starvation Detectado no Estágio B (Reação)'
-        : 'Buffer AB Abaixo da Margem Segura (< 15 min)',
-      detail: `Silagem AB em ${fmt(point.ab, 0)} t (${fmt(point.autoAB, 0)} min). Queda de alimentação A está propagando para B.`,
+        ? 'Starvation Detected at Stage B (Reaction)'
+        : 'Buffer AB Below Safe Margin (< 15 min)',
+      detail: `Silo AB at ${fmt(point.ab, 0)} t (${fmt(point.autoAB, 0)} min). Upstream feed drop from A is propagating to B.`,
       metricValue: `${fmt(point.autoAB, 0)} min`,
       targetDriverKey: 'shap_AB',
       actionType: 'rebalance_buffers',
-      actionLabel: 'Recompor Pulmão AB',
+      actionLabel: 'Replenish Buffer AB',
     });
   }
 
@@ -389,24 +389,24 @@ export function detectDeviationAlerts(point: ProcessPoint): DeviationAlert[] {
       id: 'alert-high-risk',
       severity: 'critical',
       code: 'RISK_THRESHOLD',
-      title: 'Risco Consolidado de Inadimplência da Meta Elevado',
-      detail: `Risco em ${fmt(point.risk, 0)}% (baseline 18%). Driver SHAP dominante: ${top.label} (+${fmt(top.value, 1)} pp).`,
+      title: 'Elevated Target Default Risk',
+      detail: `Consolidated risk at ${fmt(point.risk, 0)}% (18% baseline). Dominant SHAP driver: ${top.label} (+${fmt(top.value, 1)} pp).`,
       metricValue: `${fmt(point.risk, 0)}%`,
       targetDriverKey: top.key,
       actionType: 'apply_prescription',
-      actionLabel: `Intervir em ${top.shortLabel}`,
+      actionLabel: `Intervene on ${top.shortLabel}`,
     });
   } else if (point.risk >= 30) {
     alerts.push({
       id: 'alert-warn-risk',
       severity: 'warning',
       code: 'RISK_DRIFT',
-      title: 'Desvio Preventivo de Risco Detectado',
-      detail: `Risco de perda de meta em ${fmt(point.risk, 0)}%. Ofensor primário: ${top.shortLabel} (+${fmt(top.value, 1)} pp).`,
+      title: 'Preventive Risk Drift Detected',
+      detail: `Target-miss risk at ${fmt(point.risk, 0)}%. Primary offender: ${top.shortLabel} (+${fmt(top.value, 1)} pp).`,
       metricValue: `${fmt(point.risk, 0)}%`,
       targetDriverKey: top.key,
       actionType: 'apply_prescription',
-      actionLabel: `Ajustar ${top.shortLabel}`,
+      actionLabel: `Adjust ${top.shortLabel}`,
     });
   }
 
@@ -415,12 +415,12 @@ export function detectDeviationAlerts(point: ProcessPoint): DeviationAlert[] {
       id: 'alert-throughput-drop',
       severity: point.throughput < CAPACITIES.targetFinal - 35 ? 'critical' : 'warning',
       code: 'THROUGHPUT_GAP',
-      title: 'Throughput Final Abaixo da Meta Contratada',
-      detail: `Vazão em C operando a ${fmt(point.throughput, 0)} t/h contra meta de ${CAPACITIES.targetFinal} t/h.`,
+      title: 'Final Throughput Below Contracted Target',
+      detail: `Stage C running at ${fmt(point.throughput, 0)} t/h vs ${CAPACITIES.targetFinal} t/h target.`,
       metricValue: `${fmt(point.throughput, 0)} t/h`,
       targetDriverKey: point.rateB < point.rateA ? 'shap_B' : 'shap_A',
       actionType: 'apply_prescription',
-      actionLabel: 'Corrigir Gargalo',
+      actionLabel: 'Fix Bottleneck',
     });
   }
 

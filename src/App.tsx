@@ -46,20 +46,20 @@ import type {
 } from './types/process';
 
 const TAB_ITEMS: Array<{ id: TabId; label: string }> = [
-  { id: 'all', label: 'Visão Integrada' },
-  { id: 'rates', label: 'Vazões & Throughput' },
+  { id: 'all', label: 'Integrated View' },
+  { id: 'rates', label: 'Flow & Throughput' },
   { id: 'buffers', label: 'Buffers & Starvation' },
-  { id: 'forecast', label: 'Produção & Metas' },
-  { id: 'xai', label: 'Diagnóstico SHAP' },
-  { id: 'counter', label: 'Prescrição Contrafactual' },
+  { id: 'forecast', label: 'Production & Targets' },
+  { id: 'xai', label: 'SHAP Diagnostics' },
+  { id: 'counter', label: 'Counterfactual Prescriptions' },
 ];
 
 const FOCUS_ITEMS: Array<{ id: FocusChartKey; label: string }> = [
-  { id: 'trend', label: 'Vazões & Risco' },
+  { id: 'trend', label: 'Flow & Risk' },
   { id: 'buffer', label: 'Buffers AB/BC' },
-  { id: 'cum', label: 'Produção & Metas' },
-  { id: 'shap', label: 'SHAP Temporal' },
-  { id: 'waterfall', label: 'Waterfall SHAP' },
+  { id: 'cum', label: 'Production & Targets' },
+  { id: 'shap', label: 'SHAP Timeline' },
+  { id: 'waterfall', label: 'SHAP Waterfall' },
 ];
 
 export default function App() {
@@ -82,9 +82,9 @@ export default function App() {
     {
       id: 'welcome-msg',
       role: 'assistant',
-      text: 'Conectado aos sensores contínuos da linha A → B → C. Posso interpretar desvios de risco, explicar a decomposição aditiva SHAP no cursor e aplicar ajustes contrafactuais em 1 clique.',
-      timestamp: 'Inicial',
-      tag: 'Copiloto XAI',
+      text: 'Connected to continuous telemetry across A → B → C. I can interpret risk deviations, explain additive SHAP attribution at the cursor, and apply counterfactual adjustments in one click.',
+      timestamp: 'Initial',
+      tag: 'XAI Copilot',
       recommendedAction: null,
     },
   ]);
@@ -92,9 +92,9 @@ export default function App() {
   const [auditTrail, setAuditTrail] = useState<AuditEntry[]>([
     {
       id: 'audit-1',
-      timestamp: 'Inicial',
-      sender: 'Sistema XAI',
-      action: 'Baseline de calibração SHAP inicializada (18% de risco natural).',
+      timestamp: 'Initial',
+      sender: 'XAI System',
+      action: 'SHAP calibration baseline initialized (18% natural risk).',
     },
   ]);
 
@@ -108,7 +108,6 @@ export default function App() {
     waterfall: '',
   });
 
-  // Canvas refs for snapshot export
   const flowCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const trendCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const bufferCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -116,7 +115,6 @@ export default function App() {
   const shapCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const waterfallCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Sync html.dark class for Tailwind v4 @custom-variant dark
   useEffect(() => {
     const root = document.documentElement;
     if (theme === 'dark') {
@@ -126,7 +124,6 @@ export default function App() {
     }
   }, [theme]);
 
-  // Real-time streaming timer
   useEffect(() => {
     if (!isLive) return;
     const id = window.setInterval(() => {
@@ -191,7 +188,7 @@ export default function App() {
   const handleParamChange = useCallback(
     <K extends keyof SimParams>(key: K, value: SimParams[K]) => {
       const next = { ...simParams, [key]: value };
-      recalcWithParams(next, 'Simulador', `Parâmetro ${String(key)} ajustado para ${String(value)}.`);
+      recalcWithParams(next, 'Simulator', `Parameter ${String(key)} adjusted to ${String(value)}.`);
     },
     [simParams, recalcWithParams]
   );
@@ -201,21 +198,21 @@ export default function App() {
       if (shock === 'reset') {
         recalcWithParams(
           DEFAULT_SIM_PARAMS,
-          'Simulador',
-          'Parâmetros restaurados para condições nominais de projeto.'
+          'Simulator',
+          'Parameters restored to nominal design defaults.'
         );
         return;
       }
       const label =
         shock === 'tripA'
-          ? 'Falha Primária em A'
+          ? 'Primary Failure in A'
           : shock === 'bottleB'
-            ? 'Gargalo no Reator B'
-            : 'Pico de Demanda em C';
+            ? 'Bottleneck in Stage B'
+            : 'Demand Surge in C';
       recalcWithParams(
         { ...simParams, shockEvent: shock },
-        'Simulador',
-        `Distúrbio injetado: ${label}.`
+        'Simulator',
+        `Disturbance injected: ${label}.`
       );
     },
     [simParams, recalcWithParams]
@@ -225,7 +222,7 @@ export default function App() {
     const nextSeries = generateProcessSeries(simParams);
     setSeries(nextSeries);
     setCursorIdx(nextSeries.length - 1);
-    addAudit('Operador', 'Novo cenário estocástico gerado.');
+    addAudit('Operator', 'Generated new stochastic scenario.');
   };
 
   const handleExecuteAction = useCallback(
@@ -241,35 +238,35 @@ export default function App() {
           initialBufferAB: nextAB,
           initialBufferBC: nextBC,
         };
-        summary = `Rebalanceamento aplicado: Buffer AB (${nextAB} t) e Buffer BC (${nextBC} t).`;
+        summary = `Buffer rebalance applied: Buffer AB (${nextAB} t) and Buffer BC (${nextBC} t).`;
       } else {
         if (driverKey === 'shap_A') {
           nextParams = { ...simParams, targetRateA: 260, shockEvent: null };
-          summary = 'Setpoint do Estágio A elevado para 260 t/h e distúrbio limpo.';
+          summary = 'Stage A feed setpoint raised to 260 t/h and disturbance cleared.';
         } else if (driverKey === 'shap_AB') {
           nextParams = { ...simParams, initialBufferAB: 220, shockEvent: null };
-          summary = 'Pulmão AB reconstituído para 220 t.';
+          summary = 'Buffer AB replenished to 220 t.';
         } else if (driverKey === 'shap_B') {
           nextParams = { ...simParams, effB: 95, shockEvent: null };
-          summary = 'OEE do Estágio B otimizado para 95%.';
+          summary = 'Stage B OEE optimized to 95%.';
         } else if (driverKey === 'shap_BC') {
           nextParams = { ...simParams, initialBufferBC: 165, shockEvent: null };
-          summary = 'Pulmão BC reforçado para 165 t.';
+          summary = 'Buffer BC reinforced to 165 t.';
         } else {
           nextParams = { ...simParams, targetRateC: 200, shockEvent: null };
-          summary = 'Demanda do Estágio C realinhada para 200 t/h.';
+          summary = 'Stage C target demand realigned to 200 t/h.';
         }
       }
 
-      recalcWithParams(nextParams, 'Intervenção Operacional', summary);
+      recalcWithParams(nextParams, 'Operational Intervention', summary);
       setMessages((prev) => [
         ...prev,
         {
           id: `sys-${Date.now()}`,
           role: 'assistant',
-          text: `Ação aplicada com sucesso: ${summary} O risco e as trajetórias dos buffers foram recalculados.`,
+          text: `Action executed successfully: ${summary} Risk and buffer trajectories have been recalculated.`,
           timestamp: currentPoint?.time ?? '--:--',
-          tag: 'Ajuste Executado',
+          tag: 'Adjustment Applied',
           recommendedAction: null,
         },
       ]);
@@ -285,11 +282,11 @@ export default function App() {
       role: 'user',
       text,
       timestamp: currentPoint.time,
-      tag: 'Operador',
+      tag: 'Operator',
     };
 
     setMessages((prev) => [...prev, userMsg]);
-    addAudit('Operador', text);
+    addAudit('Operator', text);
     setIsAiLoading(true);
 
     try {
@@ -347,7 +344,7 @@ export default function App() {
 
       const replyText =
         data.reply ??
-        `No instante ${currentPoint.time}, o throughput está em ${fmt(currentPoint.throughput, 0)} t/h e o risco consolidado em ${fmt(currentPoint.risk, 0)}%.`;
+        `At ${currentPoint.time}, throughput is ${fmt(currentPoint.throughput, 0)} t/h with consolidated risk at ${fmt(currentPoint.risk, 0)}%.`;
 
       setMessages((prev) => [
         ...prev,
@@ -356,14 +353,14 @@ export default function App() {
           role: 'assistant',
           text: replyText,
           timestamp: currentPoint.time,
-          tag: data.source === 'gemini' ? 'Gemini XAI' : 'Motor XAI',
+          tag: data.source === 'gemini' ? 'Gemini XAI' : 'XAI Engine',
           recommendedAction: data.recommendedAction ?? null,
         },
       ]);
-      addAudit('Copiloto XAI', replyText);
+      addAudit('XAI Copilot', replyText);
     } catch {
       const top = rankedDrivers[0];
-      const fallbackText = `Análise local (${currentPoint.time}): Throughput em ${fmt(currentPoint.throughput, 0)} t/h, Risco em ${fmt(currentPoint.risk, 0)}%. Ofensor primário: ${top?.label ?? 'Estágio A'} (+${fmt(top?.value ?? 0, 1)} pp).`;
+      const fallbackText = `Local analysis (${currentPoint.time}): Throughput at ${fmt(currentPoint.throughput, 0)} t/h, Risk at ${fmt(currentPoint.risk, 0)}%. Primary offender: ${top?.label ?? 'Stage A'} (+${fmt(top?.value ?? 0, 1)} pp).`;
       setMessages((prev) => [
         ...prev,
         {
@@ -371,7 +368,7 @@ export default function App() {
           role: 'assistant',
           text: fallbackText,
           timestamp: currentPoint.time,
-          tag: 'Motor XAI',
+          tag: 'XAI Engine',
           recommendedAction: null,
         },
       ]);
@@ -404,10 +401,10 @@ export default function App() {
 
   const riskStatusLabel =
     currentPoint.risk >= 50
-      ? '✖ Crítico'
+      ? '✖ Critical'
       : currentPoint.risk >= 30
-        ? '▲ Atenção'
-        : '● Sob Controle';
+        ? '▲ Warning'
+        : '● Under Control';
 
   const riskStatusColor =
     currentPoint.risk >= 50
@@ -431,28 +428,28 @@ export default function App() {
 
         <nav className="hidden items-center gap-6 text-xs font-semibold text-slate-600 md:flex dark:text-slate-400">
           <a
-            href="#alertas"
+            href="#alerts"
             className="hover:text-slate-900 hover:underline underline-offset-4 whitespace-nowrap shrink-0 dark:hover:text-white"
           >
-            Alertas & Simulador
+            Alerts & Simulator
           </a>
           <a
-            href="#topologia"
+            href="#topology"
             className="hover:text-slate-900 hover:underline underline-offset-4 whitespace-nowrap shrink-0 dark:hover:text-white"
           >
-            Topologia SCADA
+            SCADA Topology
           </a>
           <a
-            href="#analitica"
+            href="#analytics"
             className="hover:text-slate-900 hover:underline underline-offset-4 whitespace-nowrap shrink-0 dark:hover:text-white"
           >
-            Séries & Buffers
+            Series & Buffers
           </a>
           <a
             href="#shap"
             className="hover:text-slate-900 hover:underline underline-offset-4 whitespace-nowrap shrink-0 dark:hover:text-white"
           >
-            Explicabilidade SHAP
+            SHAP Explainability
           </a>
         </nav>
 
@@ -463,7 +460,7 @@ export default function App() {
             className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-sky-700 whitespace-nowrap shrink-0 cursor-pointer"
           >
             <FileText className="h-3.5 w-3.5" />
-            <span>Exportar PDF</span>
+            <span>Export PDF</span>
           </button>
         </div>
       </header>
@@ -476,26 +473,26 @@ export default function App() {
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:items-center">
                 <div className="lg:col-span-7">
                   <div className="mb-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                    <span>Transferência de Massa Contínua</span>
+                    <span>Continuous Mass Transfer</span>
                     <span aria-hidden="true">·</span>
-                    <span>Estágio A → Buffer AB → Estágio B → Buffer BC → Estágio C</span>
+                    <span>Stage A → Buffer AB → Stage B → Buffer BC → Stage C</span>
                     <span aria-hidden="true">·</span>
-                    <span>Atribuição Aditiva SHAP</span>
+                    <span>Additive SHAP Attribution</span>
                   </div>
                   <h1 className="text-xl font-extrabold tracking-tight text-balance text-slate-900 sm:text-2xl dark:text-white">
-                    Monitoramento de Risco & Explicabilidade de Fluxo Contínuo
+                    Continuous Flow Risk Monitoring & Explainability
                   </h1>
                   <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                    Simule oscilações de alimentação, antecipe gargalos antes do esgotamento dos
-                    buffers (starvation) e decompõe aditivamente as causas do risco de inadimplência
-                    da meta final.
+                    Simulate upstream feed fluctuations, anticipate bottlenecks before buffer
+                    depletion (starvation), and additively decompose root causes of final target
+                    default risk.
                   </p>
                 </div>
 
                 <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3.5 lg:col-span-5 dark:border-slate-800 dark:bg-slate-950/60">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-bold tracking-wide text-slate-500 uppercase dark:text-slate-400">
-                      Controles de Simulação & Exibição
+                      Simulation & Display Controls
                     </span>
                     <span className="font-mono text-[11px] text-slate-500 tabular-nums dark:text-slate-400">
                       Cursor {currentPoint.time}
@@ -516,7 +513,7 @@ export default function App() {
                         <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                       )}
                       {isLive ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-                      <span>{isLive ? 'Tempo Real: ON' : 'Tempo Real: OFF'}</span>
+                      <span>{isLive ? 'Live: ON' : 'Live: OFF'}</span>
                     </button>
 
                     <button
@@ -525,7 +522,7 @@ export default function App() {
                       className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer"
                     >
                       <Dice5 className="h-3.5 w-3.5" />
-                      <span>Novo Cenário</span>
+                      <span>New Scenario</span>
                     </button>
 
                     <button
@@ -534,13 +531,13 @@ export default function App() {
                       className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer"
                     >
                       <BookOpen className="h-3.5 w-3.5" />
-                      <span>{showGuide ? 'Guia: ON' : 'Guia: OFF'}</span>
+                      <span>{showGuide ? 'Guide: ON' : 'Guide: OFF'}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-                      aria-label="Alternar tema claro e escuro"
+                      aria-label="Toggle light and dark theme"
                       className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer"
                     >
                       {theme === 'dark' ? (
@@ -548,7 +545,7 @@ export default function App() {
                       ) : (
                         <Moon className="h-3.5 w-3.5" />
                       )}
-                      <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}</span>
+                      <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
                     </button>
 
                     <button
@@ -561,7 +558,7 @@ export default function App() {
                       }`}
                     >
                       <MessageSquare className="h-3.5 w-3.5" />
-                      <span>{isAiOpen ? 'Copiloto IA: Ativo' : 'Abrir Copiloto IA'}</span>
+                      <span>{isAiOpen ? 'AI Copilot: Active' : 'Open AI Copilot'}</span>
                     </button>
                   </div>
                 </div>
@@ -569,7 +566,7 @@ export default function App() {
             </section>
 
             {/* Real-Time Visual Deviation Alerts */}
-            <div id="alertas">
+            <div id="alerts">
               <AlertsBanner
                 alerts={activeAlerts}
                 currentTime={currentPoint.time}
@@ -588,7 +585,7 @@ export default function App() {
             <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
               <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                 <div className="text-[11px] font-semibold tracking-wide text-rose-600 uppercase dark:text-rose-400">
-                  Estágio A · Upstream
+                  Stage A · Upstream
                 </div>
                 <div className="mt-1.5 flex items-baseline">
                   <span className="font-mono text-2xl font-bold text-slate-900 tabular-nums dark:text-white">
@@ -600,7 +597,7 @@ export default function App() {
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
                   <span className="font-mono tabular-nums">OEE {fmt(currentPoint.oeeA, 0)}%</span>
-                  <span>{currentPoint.oeeA < 75 ? '▲ Baixo' : '● Nominal'}</span>
+                  <span>{currentPoint.oeeA < 75 ? '▲ Low' : '● Nominal'}</span>
                 </div>
               </div>
 
@@ -612,7 +609,7 @@ export default function App() {
                 }`}
               >
                 <div className="text-[11px] font-semibold tracking-wide text-orange-600 uppercase dark:text-orange-400">
-                  Buffer Pulmão AB
+                  Buffer Silo AB
                 </div>
                 <div className="mt-1.5 flex items-baseline">
                   <span className="font-mono text-2xl font-bold text-slate-900 tabular-nums dark:text-white">
@@ -642,7 +639,7 @@ export default function App() {
                 }`}
               >
                 <div className="text-[11px] font-semibold tracking-wide text-amber-600 uppercase dark:text-amber-400">
-                  Estágio B · Reação
+                  Stage B · Reaction
                 </div>
                 <div className="mt-1.5 flex items-baseline">
                   <span className="font-mono text-2xl font-bold text-slate-900 tabular-nums dark:text-white">
@@ -674,7 +671,7 @@ export default function App() {
                 }`}
               >
                 <div className="text-[11px] font-semibold tracking-wide text-emerald-600 uppercase dark:text-emerald-400">
-                  Buffer Pulmão BC
+                  Buffer Silo BC
                 </div>
                 <div className="mt-1.5 flex items-baseline">
                   <span className="font-mono text-2xl font-bold text-slate-900 tabular-nums dark:text-white">
@@ -698,7 +695,7 @@ export default function App() {
 
               <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                 <div className="text-[11px] font-semibold tracking-wide text-cyan-600 uppercase dark:text-cyan-400">
-                  Throughput Final · C
+                  Final Throughput · C
                 </div>
                 <div className="mt-1.5 flex items-baseline">
                   <span className="font-mono text-2xl font-bold text-slate-900 tabular-nums dark:text-white">
@@ -710,7 +707,7 @@ export default function App() {
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
                   <span className="font-mono tabular-nums">
-                    Acum {fmt(currentPoint.prodCum, 0)} t
+                    Cum {fmt(currentPoint.prodCum, 0)} t
                   </span>
                   <span
                     className={`font-mono tabular-nums ${
@@ -733,7 +730,7 @@ export default function App() {
                 }`}
               >
                 <div className="text-[11px] font-semibold tracking-wide text-rose-500 uppercase">
-                  Risco Perda de Meta
+                  Target Default Risk
                 </div>
                 <div className="mt-1.5 flex items-baseline">
                   <span className="font-mono text-2xl font-bold text-slate-900 tabular-nums dark:text-white">
@@ -754,22 +751,22 @@ export default function App() {
 
             {/* Physical-Stochastic SCADA Topology */}
             <section
-              id="topologia"
+              id="topology"
               className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
             >
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                    Topologia Físico-Estocástica da Cadeia
+                    Physical-Stochastic Chain Topology
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Escoamento contínuo de massa, balanço líquido entre estágios, nível dinâmico dos
-                    silos e detecção de starvation.
+                    Continuous mass flow, net inter-stage balance, dynamic silo levels, and
+                    real-time starvation detection.
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-xs">
                   <span className="hidden font-mono text-slate-500 tabular-nums sm:inline dark:text-slate-400">
-                    Balanço Δ = Entrada − Saída
+                    Balance Δ = Inflow − Outflow
                   </span>
                   <span
                     className={`font-semibold ${
@@ -779,8 +776,8 @@ export default function App() {
                     }`}
                   >
                     {currentPoint.starvedB || currentPoint.starvedC
-                      ? '✖ Starvation Detectado na Linha'
-                      : '● Fluxo Contínuo Estável'}
+                      ? '✖ Starvation Detected on Line'
+                      : '● Continuous Flow Stable'}
                   </span>
                 </div>
               </div>
@@ -795,13 +792,13 @@ export default function App() {
 
             {/* Navigation & Synchronized Cursor Toolbar */}
             <nav
-              id="analitica"
+              id="analytics"
               className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
             >
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3 dark:border-slate-800">
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-bold tracking-wide text-slate-500 uppercase dark:text-slate-400">
-                    Modo de Inspeção
+                    Inspection Mode
                   </span>
                   <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
                     <button
@@ -813,7 +810,7 @@ export default function App() {
                           : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                       }`}
                     >
-                      Abas Temáticas
+                      Thematic Tabs
                     </button>
                     <button
                       type="button"
@@ -824,13 +821,13 @@ export default function App() {
                           : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                       }`}
                     >
-                      Modo Foco
+                      Focus Mode
                     </button>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                  <span>Cursor sincronizado nos gráficos:</span>
+                  <span>Synchronized chart cursor:</span>
                   <span className="font-mono font-bold text-sky-600 tabular-nums dark:text-sky-400">
                     {currentPoint.time}
                   </span>
@@ -883,11 +880,11 @@ export default function App() {
                       <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
                         <div>
                           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                            Dinâmica Temporal da Cadeia & Throughput Final
+                            Chain Temporal Dynamics & Final Throughput
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Passe o cursor para congelar o instante em todos os gráficos e recalcular
-                            a explicação SHAP.
+                            Hover across the chart to freeze any instant across all views and
+                            recompute SHAP attribution.
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600 dark:text-slate-300">
@@ -905,7 +902,7 @@ export default function App() {
                           </span>
                           <span className="flex items-center gap-1.5">
                             <span className="h-0.5 w-3 border-t-2 border-dashed border-rose-400" />{' '}
-                            Risco (%)
+                            Risk (%)
                           </span>
                         </div>
                       </div>
@@ -913,11 +910,11 @@ export default function App() {
                       {showGuide && (
                         <div className="mb-3 rounded-lg border border-dashed border-sky-500/35 bg-sky-500/5 px-3 py-2 text-xs text-slate-600 dark:text-slate-300">
                           <strong className="text-slate-900 dark:text-white">
-                            Como interpretar:
+                            How to interpret:
                           </strong>{' '}
-                          Quedas em A que chegam tardiamente a C evidenciam o amortecimento dos
-                          buffers AB e BC. Quando a curva pontilhada de risco sobe, o risco de
-                          perda da meta do turno está ativo.
+                          Drops in Stage A that reach Stage C with delay illustrate the buffering
+                          effect of AB and BC. When the dashed risk curve spikes, shift target
+                          compliance is at risk.
                         </div>
                       )}
 
@@ -936,10 +933,10 @@ export default function App() {
                       <div className="mb-2 flex items-start justify-between gap-2">
                         <div>
                           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                            Dinâmica dos Buffers AB & BC
+                            Buffer AB & BC Dynamics
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Volume acumulado vs limiar crítico de starvation.
+                            Stored volume vs critical starvation threshold.
                           </p>
                         </div>
                         <div className="flex items-center gap-2.5 text-[11px] text-slate-600 dark:text-slate-300">
@@ -954,8 +951,11 @@ export default function App() {
 
                       {showGuide && (
                         <div className="mb-3 rounded-lg border border-dashed border-amber-500/35 bg-amber-500/5 px-3 py-2 text-xs text-slate-600 dark:text-slate-300">
-                          <strong className="text-slate-900 dark:text-white">Limiar crítico:</strong>{' '}
-                          Abaixo da linha tracejada vermelha, a autonomia cai abaixo de 15 minutos.
+                          <strong className="text-slate-900 dark:text-white">
+                            Critical threshold:
+                          </strong>{' '}
+                          Below the red dashed line, remaining buffer autonomy drops under 15
+                          minutes.
                         </div>
                       )}
 
@@ -974,10 +974,11 @@ export default function App() {
                       <div className="mb-2 flex items-start justify-between gap-2">
                         <div>
                           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                            Produção Acumulada vs Meta Contratada
+                            Cumulative Production vs Contracted Target
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Entrega real e cone de incerteza probabilístico até o fim do ciclo.
+                            Actual cumulative output and probabilistic uncertainty cone to end of
+                            cycle.
                           </p>
                         </div>
                         <span
@@ -987,7 +988,7 @@ export default function App() {
                               : 'text-rose-600 dark:text-rose-400'
                           }`}
                         >
-                          Saldo {cumGap >= 0 ? '+' : ''}
+                          Variance {cumGap >= 0 ? '+' : ''}
                           {fmt(cumGap, 0)} t
                         </span>
                       </div>
@@ -1009,10 +1010,10 @@ export default function App() {
                       <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
                         <div>
                           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                            Atribuição SHAP Temporal (+pp de Risco)
+                            Temporal SHAP Attribution (+pp Risk)
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Causas primárias aditivas acima do patamar natural (18%).
+                            Additive primary causes above the 18% natural baseline.
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-slate-600 dark:text-slate-300">
@@ -1048,14 +1049,14 @@ export default function App() {
                       <div className="mb-2 flex items-start justify-between gap-2">
                         <div>
                           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                            Waterfall SHAP · Instante {currentPoint.time}
+                            SHAP Waterfall · Instant {currentPoint.time}
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Decomposição aditiva partindo da linha base de 18%.
+                            Additive risk breakdown starting from the 18% baseline.
                           </p>
                         </div>
                         <span className={`font-mono text-xs font-bold tabular-nums ${riskStatusColor}`}>
-                          Risco {fmt(currentPoint.risk, 0)}%
+                          Risk {fmt(currentPoint.risk, 0)}%
                         </span>
                       </div>
                       <div className="h-[220px] w-full">
@@ -1066,25 +1067,25 @@ export default function App() {
                         />
                       </div>
                       <p className="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                        Às <span className="font-mono font-semibold">{currentPoint.time}</span>, o
-                        risco consolidado é de{' '}
+                        At <span className="font-mono font-semibold">{currentPoint.time}</span>,
+                        consolidated risk is{' '}
                         <span className="font-mono font-semibold">{fmt(currentPoint.risk, 0)}%</span>
-                        . O principal ofensor é{' '}
+                        . The top risk driver is{' '}
                         <strong className="text-slate-900 dark:text-white">
                           {rankedDrivers[0]?.label}
                         </strong>{' '}
-                        (+{fmt(rankedDrivers[0]?.value ?? 0, 1)} pp), indicando o ponto de maior
-                        alavancagem para intervenção.
+                        (+{fmt(rankedDrivers[0]?.value ?? 0, 1)} pp), indicating the highest-leverage
+                        point for operator intervention.
                       </p>
                     </section>
 
                     <section className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 lg:col-span-6 dark:border-slate-800 dark:bg-slate-900">
                       <div className="mb-3">
                         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                          Ranking de Drivers & Prescrição Contrafactual
+                          Driver Ranking & Counterfactual Prescriptions
                         </h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Ações de menor esforço para mitigar o risco de entrega.
+                          Lowest-effort interventions to recover target delivery.
                         </p>
                       </div>
                       <XaiDiagnostics
@@ -1101,10 +1102,10 @@ export default function App() {
                 {activeTab === 'rates' && (
                   <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                     <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                      Vazões dos Estágios A, B, C & Throughput Consolidado
+                      Stage A, B, C Flow Rates & Consolidated Throughput
                     </h3>
                     <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-                      Inspeção ampliada das taxas volumétricas e propagação de distúrbios downstream.
+                      Expanded inspection of volumetric rates and downstream disturbance propagation.
                     </p>
                     <div className="h-[420px] w-full">
                       <TrendChart
@@ -1121,10 +1122,10 @@ export default function App() {
                 {activeTab === 'buffers' && (
                   <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                     <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                      Monitoramento de Buffers Intermediários AB & BC
+                      Intermediate Buffers AB & BC Monitoring
                     </h3>
                     <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-                      Autonomia em minutos antes do esgotamento e proteção contra starvation.
+                      Remaining autonomy in minutes before depletion and starvation protection.
                     </p>
                     <div className="h-[420px] w-full">
                       <BufferChart
@@ -1141,10 +1142,10 @@ export default function App() {
                 {activeTab === 'forecast' && (
                   <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                     <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                      Produção Acumulada vs Meta Contratada (Forecast)
+                      Cumulative Production vs Contracted Target (Forecast)
                     </h3>
                     <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-                      Envelope probabilístico baseado no throughput instantâneo da linha.
+                      Probabilistic envelope based on instantaneous line throughput.
                     </p>
                     <div className="h-[420px] w-full">
                       <CumulativeChart
@@ -1162,10 +1163,10 @@ export default function App() {
                   <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
                     <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-7 dark:border-slate-800 dark:bg-slate-900">
                       <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                        Série Temporal SHAP (+pp de Risco)
+                        Temporal SHAP Series (+pp Risk)
                       </h3>
                       <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-                        Contribuição aditiva histórica por estágio e estoque intermediário.
+                        Historical additive contribution by stage and intermediate buffer.
                       </p>
                       <div className="h-[380px] w-full">
                         <ShapTimelineChart
@@ -1179,10 +1180,10 @@ export default function App() {
                     </section>
                     <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-5 dark:border-slate-800 dark:bg-slate-900">
                       <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                        Waterfall SHAP ({currentPoint.time})
+                        SHAP Waterfall ({currentPoint.time})
                       </h3>
                       <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-                        Composição exata no instante selecionado pelo cursor.
+                        Exact attribution at the cursor-selected instant.
                       </p>
                       <div className="h-[380px] w-full">
                         <WaterfallChart
@@ -1198,10 +1199,10 @@ export default function App() {
                 {activeTab === 'counter' && (
                   <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                     <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                      Análise Contrafactual Prescritiva ("What-If Prescritivo")
+                      Prescriptive Counterfactual Analysis ("Prescriptive What-If")
                     </h3>
                     <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-                      Intervenções recomendadas de menor esforço para restaurar a meta no instante{' '}
+                      Lowest-effort recommended interventions to restore target at{' '}
                       {currentPoint.time}.
                     </p>
                     <XaiDiagnostics
@@ -1221,11 +1222,11 @@ export default function App() {
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <div>
                       <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                        Inspeção em Foco ·{' '}
+                        Focus Inspection ·{' '}
                         {FOCUS_ITEMS.find((f) => f.id === focusChart)?.label ?? ''}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Visualização expandida com cursor sincronizado para análise de desvios.
+                        Expanded visualization with synchronized cursor for deviation analysis.
                       </p>
                     </div>
                     <span className="font-mono text-xs font-bold text-sky-600 tabular-nums dark:text-sky-400">
@@ -1283,7 +1284,7 @@ export default function App() {
                   <div>
                     <div className="mb-2 flex items-center justify-between">
                       <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                        Snapshot SHAP no Cursor
+                        SHAP Snapshot at Cursor
                       </h3>
                       <span className="font-mono text-xs font-bold text-slate-500 tabular-nums">
                         {currentPoint.time}
@@ -1306,8 +1307,8 @@ export default function App() {
             )}
 
             <footer className="no-print border-t border-slate-200 pt-4 pb-8 text-center text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
-              FluxChain XAI · Centro de Operações Contínuas A → B → C · Atribuição Aditiva SHAP &
-              Auditoria Operacional
+              FluxChain XAI · Continuous Operations Center A → B → C · Additive SHAP Attribution &
+              Operational Audit
             </footer>
           </div>
         </main>

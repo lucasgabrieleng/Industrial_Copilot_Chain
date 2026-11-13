@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CAPACITIES, DRIVERS, clamp, fmt } from '../engine/processSimulation';
-import type { ProcessPoint } from '../types/process';
+import { DRIVER_LABELS, UI_TEXT } from '../i18n/translations';
+import type { Language, ProcessPoint } from '../types/process';
 
 interface BaseChartProps {
   series: ProcessPoint[];
   cursorIdx: number;
   theme: 'dark' | 'light';
+  lang: Language;
   onCursorChange?: (idx: number) => void;
   canvasRef?: React.RefObject<HTMLCanvasElement | null>;
 }
@@ -86,9 +88,11 @@ export const TrendChart: React.FC<BaseChartProps> = ({
   series,
   cursorIdx,
   theme,
+  lang,
   onCursorChange,
   canvasRef: externalRef,
 }) => {
+  const t = UI_TEXT[lang].charts;
   const { canvasRef, hoverPos, handlers } = useInteractiveCanvas(
     series.length,
     onCursorChange,
@@ -200,7 +204,7 @@ export const TrendChart: React.FC<BaseChartProps> = ({
 
       ctx.textAlign = 'left';
       ctx.fillStyle = '#fb7185';
-      ctx.fillText('100% Risk', width - pad.right + 6, pad.top + 8);
+      ctx.fillText(t.axisRisk100, width - pad.right + 6, pad.top + 8);
       ctx.fillText('50%', width - pad.right + 6, pad.top + plotH / 2 + 3);
       ctx.fillText('0%', width - pad.right + 6, height - pad.bottom);
 
@@ -216,7 +220,7 @@ export const TrendChart: React.FC<BaseChartProps> = ({
     const ro = new ResizeObserver(draw);
     if (canvasRef.current) ro.observe(canvasRef.current);
     return () => ro.disconnect();
-  }, [series, cursorIdx, theme, canvasRef]);
+  }, [series, cursorIdx, theme, lang, t.axisRisk100, canvasRef]);
 
   const cur = series[clamp(cursorIdx, 0, Math.max(0, series.length - 1))];
 
@@ -229,17 +233,21 @@ export const TrendChart: React.FC<BaseChartProps> = ({
           style={{ left: hoverPos.x, top: hoverPos.y }}
         >
           <div className="mb-1 flex items-center justify-between font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-            <span>Instant {cur.time}</span>
-            <span className="text-rose-500">Risk {fmt(cur.risk, 0)}%</span>
+            <span>
+              {t.tooltipInstant} {cur.time}
+            </span>
+            <span className="text-rose-500">
+              {t.riskLabel} {fmt(cur.risk, 0)}%
+            </span>
           </div>
           <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 font-mono text-[11px] tabular-nums">
-            <span className="text-rose-500">Stage A:</span>
+            <span className="text-rose-500">{t.tooltipStageA}</span>
             <span className="text-right font-semibold">{fmt(cur.rateA, 0)} t/h</span>
-            <span className="text-amber-500">Stage B:</span>
+            <span className="text-amber-500">{t.tooltipStageB}</span>
             <span className="text-right font-semibold">{fmt(cur.rateB, 0)} t/h</span>
-            <span className="text-cyan-500">Stage C:</span>
+            <span className="text-cyan-500">{t.tooltipStageC}</span>
             <span className="text-right font-semibold">{fmt(cur.rateC, 0)} t/h</span>
-            <span className="text-sky-500">Throughput:</span>
+            <span className="text-sky-500">{t.tooltipThroughput}</span>
             <span className="text-right font-bold">{fmt(cur.throughput, 0)} t/h</span>
           </div>
         </div>
@@ -252,9 +260,11 @@ export const BufferChart: React.FC<BaseChartProps> = ({
   series,
   cursorIdx,
   theme,
+  lang,
   onCursorChange,
   canvasRef: externalRef,
 }) => {
+  const t = UI_TEXT[lang].charts;
   const { canvasRef, hoverPos, handlers } = useInteractiveCanvas(
     series.length,
     onCursorChange,
@@ -348,7 +358,7 @@ export const BufferChart: React.FC<BaseChartProps> = ({
 
       ctx.fillStyle = '#ef4444';
       ctx.textAlign = 'left';
-      ctx.fillText('Critical Zone', pad.left + 6, dangerY - 5);
+      ctx.fillText(t.criticalZone, pad.left + 6, dangerY - 5);
 
       ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
       ctx.textAlign = 'center';
@@ -362,7 +372,7 @@ export const BufferChart: React.FC<BaseChartProps> = ({
     const ro = new ResizeObserver(draw);
     if (canvasRef.current) ro.observe(canvasRef.current);
     return () => ro.disconnect();
-  }, [series, cursorIdx, theme, canvasRef]);
+  }, [series, cursorIdx, theme, lang, t.criticalZone, canvasRef]);
 
   const cur = series[clamp(cursorIdx, 0, Math.max(0, series.length - 1))];
 
@@ -375,7 +385,7 @@ export const BufferChart: React.FC<BaseChartProps> = ({
           style={{ left: hoverPos.x, top: hoverPos.y }}
         >
           <div className="mb-1 font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-            Buffers · {cur.time}
+            {t.tooltipBuffers} · {cur.time}
           </div>
           <div className="space-y-0.5 font-mono text-[11px] tabular-nums">
             <div className="flex justify-between gap-3">
@@ -401,9 +411,11 @@ export const CumulativeChart: React.FC<BaseChartProps> = ({
   series,
   cursorIdx,
   theme,
+  lang,
   onCursorChange,
   canvasRef: externalRef,
 }) => {
+  const t = UI_TEXT[lang].charts;
   const { canvasRef, hoverPos, handlers } = useInteractiveCanvas(
     series.length,
     onCursorChange,
@@ -519,19 +531,19 @@ export const CumulativeChart: React.FC<BaseChartProps> = ({
           style={{ left: hoverPos.x, top: hoverPos.y }}
         >
           <div className="mb-1 font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-            Cumulative · {cur.time}
+            {t.tooltipCumulative} · {cur.time}
           </div>
           <div className="space-y-0.5 font-mono text-[11px] tabular-nums">
             <div className="flex justify-between gap-3">
-              <span className="text-sky-500">Actual:</span>
+              <span className="text-sky-500">{t.tooltipActual}</span>
               <span className="font-semibold">{fmt(cur.prodCum, 0)} t</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span className="text-indigo-400">Partial Target:</span>
+              <span className="text-indigo-400">{t.tooltipTarget}</span>
               <span className="font-semibold">{fmt(cur.targetCum, 0)} t</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span>Variance:</span>
+              <span>{t.tooltipVariance}</span>
               <span className={`font-bold ${gap >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {gap >= 0 ? '+' : ''}
                 {fmt(gap, 0)} t
@@ -548,9 +560,12 @@ export const ShapTimelineChart: React.FC<BaseChartProps> = ({
   series,
   cursorIdx,
   theme,
+  lang,
   onCursorChange,
   canvasRef: externalRef,
 }) => {
+  const t = UI_TEXT[lang].charts;
+  const driverLabels = DRIVER_LABELS[lang];
   const { canvasRef, hoverPos, handlers } = useInteractiveCanvas(
     series.length,
     onCursorChange,
@@ -639,7 +654,7 @@ export const ShapTimelineChart: React.FC<BaseChartProps> = ({
           style={{ left: hoverPos.x, top: hoverPos.y }}
         >
           <div className="mb-1 font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-            Additive SHAP · {cur.time}
+            {t.tooltipShap} · {cur.time}
           </div>
           <div className="space-y-0.5 font-mono text-[11px] tabular-nums">
             {DRIVERS.map((d) => (
@@ -649,7 +664,7 @@ export const ShapTimelineChart: React.FC<BaseChartProps> = ({
                     className="inline-block h-2 w-2 rounded-xs"
                     style={{ backgroundColor: d.hex }}
                   />
-                  {d.shortLabel}:
+                  {driverLabels[d.key].shortLabel}:
                 </span>
                 <span className="font-semibold">+{fmt(cur[d.key], 1)} pp</span>
               </div>
@@ -664,14 +679,18 @@ export const ShapTimelineChart: React.FC<BaseChartProps> = ({
 interface WaterfallChartProps {
   point: ProcessPoint;
   theme: 'dark' | 'light';
+  lang: Language;
   canvasRef?: React.RefObject<HTMLCanvasElement | null>;
 }
 
 export const WaterfallChart: React.FC<WaterfallChartProps> = ({
   point,
   theme,
+  lang,
   canvasRef: externalRef,
 }) => {
+  const t = UI_TEXT[lang].charts;
+  const driverLabels = DRIVER_LABELS[lang];
   const internalRef = useRef<HTMLCanvasElement | null>(null);
   const canvasRef = externalRef ?? internalRef;
   const [tip, setTip] = useState<TooltipState>({ visible: false, x: 0, y: 0, point: null });
@@ -689,12 +708,14 @@ export const WaterfallChart: React.FC<WaterfallChartProps> = ({
       const isDark = theme === 'dark';
 
       const items = [
-        { label: 'Base', val: CAPACITIES.baselineRisk, color: '#64748b' },
+        { label: t.waterfallBase, val: CAPACITIES.baselineRisk, color: '#64748b' },
         ...DRIVERS.map((d) => ({
-          label: d.shortLabel
+          label: driverLabels[d.key].shortLabel
             .replace('Stage ', '')
+            .replace('Estágio ', '')
             .replace('Buffer ', '')
-            .replace('Systemic', 'Syst.'),
+            .replace('Systemic', t.waterfallSyst)
+            .replace('Sistêmico', t.waterfallSyst),
           val: point[d.key],
           color: d.hex,
         })),
@@ -758,7 +779,7 @@ export const WaterfallChart: React.FC<WaterfallChartProps> = ({
 
       ctx.fillStyle = '#fb7185';
       ctx.font = '700 9.5px "IBM Plex Sans", system-ui';
-      ctx.fillText('Risk', xTot + barW / 2, height - 7);
+      ctx.fillText(t.waterfallRisk, xTot + barW / 2, height - 7);
 
       ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
       ctx.font = '500 9.5px "JetBrains Mono", monospace';
@@ -771,7 +792,7 @@ export const WaterfallChart: React.FC<WaterfallChartProps> = ({
     const ro = new ResizeObserver(draw);
     if (canvasRef.current) ro.observe(canvasRef.current);
     return () => ro.disconnect();
-  }, [point, theme, canvasRef]);
+  }, [point, theme, lang, driverLabels, t.waterfallBase, t.waterfallSyst, t.waterfallRisk, canvasRef]);
 
   return (
     <div className="relative h-full w-full">
@@ -794,9 +815,12 @@ export const WaterfallChart: React.FC<WaterfallChartProps> = ({
           className="pointer-events-none absolute z-30 rounded-lg border border-slate-300 bg-white/95 px-2.5 py-2 font-mono text-[11px] text-slate-900 shadow-lg dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-100"
           style={{ left: tip.x, top: tip.y }}
         >
-          <div className="font-semibold">SHAP Breakdown ({point.time})</div>
+          <div className="font-semibold">
+            {t.tooltipWaterfallTitle} ({point.time})
+          </div>
           <div className="text-slate-500 dark:text-slate-400">
-            Base {CAPACITIES.baselineRisk}% → Total Risk {fmt(point.risk, 0)}%
+            {t.tooltipWaterfallBase} {CAPACITIES.baselineRisk}% → {t.tooltipWaterfallTotal}{' '}
+            {fmt(point.risk, 0)}%
           </div>
         </div>
       )}

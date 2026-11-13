@@ -101,3 +101,4 @@ export interface ChatMessage {
 export type NavMode = 'perspectives' | 'focus';
 export type TabId = 'all' | 'rates' | 'buffers' | 'forecast' | 'xai' | 'counter';
 export type FocusChartKey = 'trend' | 'buffer' | 'cum' | 'shap' | 'waterfall';
+export type Language = 'en' | 'pt';

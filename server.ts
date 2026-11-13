@@ -43,15 +43,45 @@ interface AssistantRequestBody {
     shockEvent: string | null;
   };
   history?: Array<{ role: "user" | "assistant"; text: string }>;
+  lang?: "en" | "pt";
 }
 
 function buildDeterministicFallback(body: AssistantRequestBody) {
   const { query, telemetry } = body;
+  const isPt = body.lang === "pt";
   const q = query.toLowerCase();
-  const top = telemetry.topDrivers[0] ?? { key: "shap_A", label: "Stage A", value: 0 };
-  const second = telemetry.topDrivers[1] ?? { key: "shap_B", label: "Stage B", value: 0 };
+  const top = telemetry.topDrivers[0] ?? {
+    key: "shap_A",
+    label: isPt ? "Estágio A" : "Stage A",
+    value: 0,
+  };
+  const second = telemetry.topDrivers[1] ?? {
+    key: "shap_B",
+    label: isPt ? "Estágio B" : "Stage B",
+    value: 0,
+  };
 
-  if (q.includes("buffer") || q.includes("starvation") || q.includes("inventory") || q.includes("silo")) {
+  if (
+    q.includes("buffer") ||
+    q.includes("starvation") ||
+    q.includes("inventory") ||
+    q.includes("silo") ||
+    q.includes("estoque")
+  ) {
+    if (isPt) {
+      const abWarn =
+        telemetry.autoAB < 15 ? "risco iminente de starvation no Estágio B" : "autonomia segura";
+      const bcWarn =
+        telemetry.autoBC < 15 ? "risco iminente de starvation no Estágio C" : "autonomia segura";
+      return {
+        reply: `Às ${telemetry.time}, o Buffer AB opera com ${telemetry.ab.toFixed(0)} t (${telemetry.autoAB.toFixed(0)} min de autonomia — ${abWarn}) e o Buffer BC com ${telemetry.bc.toFixed(0)} t (${telemetry.autoBC.toFixed(0)} min — ${bcWarn}). ${telemetry.starvedB || telemetry.starvedC ? "Há estrangulamento ativo por starvation downstream; recomendo rebalanceamento imediato dos buffers." : "Mantenha autonomia acima de 15 minutos em ambos os silos intermediários."}`,
+        recommendedAction: {
+          type: "rebalance_buffers" as const,
+          label: "Aplicar Rebalanceamento Automático (+45t AB / +35t BC)",
+          driverKey: "shap_AB",
+        },
+      };
+    }
     const abWarn = telemetry.autoAB < 15 ? "imminent starvation risk at Stage B" : "safe autonomy";
     const bcWarn = telemetry.autoBC < 15 ? "imminent starvation risk at Stage C" : "safe autonomy";
     return {
@@ -64,8 +94,26 @@ function buildDeterministicFallback(body: AssistantRequestBody) {
     };
   }
 
-  if (q.includes("prescri") || q.includes("counterfactual") || q.includes("fix") || q.includes("action") || q.includes("reduce")) {
+  if (
+    q.includes("prescri") ||
+    q.includes("counterfactual") ||
+    q.includes("contrafactual") ||
+    q.includes("fix") ||
+    q.includes("action") ||
+    q.includes("reduce") ||
+    q.includes("reduz")
+  ) {
     const gain = (top.value * 0.65).toFixed(1);
+    if (isPt) {
+      return {
+        reply: `Prescrição Contrafactual às ${telemetry.time}: o vetor primário de risco é ${top.label} (+${top.value.toFixed(1)} pp). Intervindo diretamente neste estágio, estima-se redução de -${gain} pp no risco consolidado de perda da meta.`,
+        recommendedAction: {
+          type: "apply_prescription" as const,
+          label: `Executar Ajuste Prescrito em ${top.label.split(" (")[0]} (-${gain} pp)`,
+          driverKey: top.key,
+        },
+      };
+    }
     return {
       reply: `Counterfactual Prescription at ${telemetry.time}: the primary risk driver is ${top.label} (+${top.value.toFixed(1)} pp). Intervening directly on this stage yields an estimated -${gain} pp reduction in consolidated target-miss risk.`,
       recommendedAction: {
@@ -76,24 +124,63 @@ function buildDeterministicFallback(body: AssistantRequestBody) {
     };
   }
 
-  if (q.includes("bottleneck") || q.includes("rate") || q.includes("flow") || q.includes("throughput") || q.includes("oee")) {
+  if (
+    q.includes("bottleneck") ||
+    q.includes("gargalo") ||
+    q.includes("rate") ||
+    q.includes("vazão") ||
+    q.includes("flow") ||
+    q.includes("throughput") ||
+    q.includes("oee")
+  ) {
     const stages = [
-      { name: "Stage A", rate: telemetry.rateA, oee: telemetry.oeeA },
-      { name: "Stage B", rate: telemetry.rateB, oee: telemetry.oeeB },
-      { name: "Stage C", rate: telemetry.rateC, oee: telemetry.oeeC },
+      { name: isPt ? "Estágio A" : "Stage A", rate: telemetry.rateA, oee: telemetry.oeeA },
+      { name: isPt ? "Estágio B" : "Stage B", rate: telemetry.rateB, oee: telemetry.oeeB },
+      { name: isPt ? "Estágio C" : "Stage C", rate: telemetry.rateC, oee: telemetry.oeeC },
     ].sort((a, b) => a.rate - b.rate);
     const bottleneck = stages[0];
+    if (isPt) {
+      return {
+        reply: `Diagnóstico de fluxo às ${telemetry.time}: o gargalo físico atual é o ${bottleneck.name}, operando a ${bottleneck.rate.toFixed(0)} t/h (OEE ${bottleneck.oee.toFixed(0)}%) frente à meta final de 200 t/h. Estágio A: ${telemetry.rateA.toFixed(0)} t/h | Estágio B: ${telemetry.rateB.toFixed(0)} t/h | Estágio C: ${telemetry.rateC.toFixed(0)} t/h.`,
+        recommendedAction: {
+          type: "apply_prescription" as const,
+          label: `Otimizar ${bottleneck.name} via Setpoint Prescrito`,
+          driverKey: bottleneck.name.includes("A")
+            ? "shap_A"
+            : bottleneck.name.includes("B")
+              ? "shap_B"
+              : "shap_C",
+        },
+      };
+    }
     return {
       reply: `Flow diagnosis at ${telemetry.time}: the current physical bottleneck is ${bottleneck.name}, running at ${bottleneck.rate.toFixed(0)} t/h (OEE ${bottleneck.oee.toFixed(0)}%) against the 200 t/h final target. Stage A: ${telemetry.rateA.toFixed(0)} t/h | Stage B: ${telemetry.rateB.toFixed(0)} t/h | Stage C: ${telemetry.rateC.toFixed(0)} t/h.`,
       recommendedAction: {
         type: "apply_prescription" as const,
         label: `Optimize ${bottleneck.name} via Prescribed Setpoint`,
-        driverKey: bottleneck.name.includes("A") ? "shap_A" : bottleneck.name.includes("B") ? "shap_B" : "shap_C",
+        driverKey: bottleneck.name.includes("A")
+          ? "shap_A"
+          : bottleneck.name.includes("B")
+            ? "shap_B"
+            : "shap_C",
       },
     };
   }
 
   const gap = telemetry.prodCum - telemetry.targetCum;
+  if (isPt) {
+    return {
+      reply: `Às ${telemetry.time}, o Risco Consolidado de Inadimplência é ${telemetry.risk.toFixed(0)}% (base natural 18%) com vazão final em ${telemetry.throughput.toFixed(0)} t/h e desvio acumulado de ${gap >= 0 ? "+" : ""}${gap.toFixed(0)} t vs meta. Pela decomposição SHAP, o principal ofensor é ${top.label} (+${top.value.toFixed(1)} pp), seguido por ${second.label} (+${second.value.toFixed(1)} pp).`,
+      recommendedAction:
+        telemetry.risk >= 30
+          ? {
+              type: "apply_prescription" as const,
+              label: `Mitigar ${top.label.split(" (")[0]} (-${(top.value * 0.65).toFixed(1)} pp)`,
+              driverKey: top.key,
+            }
+          : null,
+    };
+  }
   return {
     reply: `At ${telemetry.time}, Consolidated Target-Miss Risk is ${telemetry.risk.toFixed(0)}% (18% natural baseline) with final throughput at ${telemetry.throughput.toFixed(0)} t/h and cumulative variance of ${gap >= 0 ? "+" : ""}${gap.toFixed(0)} t vs target. Per SHAP decomposition, the primary driver is ${top.label} (+${top.value.toFixed(1)} pp), followed by ${second.label} (+${second.value.toFixed(1)} pp).`,
     recommendedAction:
@@ -134,13 +221,20 @@ async function startServer() {
         },
       });
 
-      const systemInstruction = `You are the Process Engineering Operational Copilot for the FluxChain XAI dashboard.
+      const isPt = body.lang === "pt";
+      const systemInstruction = isPt
+        ? `Você é o Copiloto Operacional de Engenharia de Processos do painel FluxChain XAI.
+Responda em português técnico claro e objetivo (máximo 110 palavras), sempre fundamentado estritamente nos números de telemetria fornecidos.
+Use unidades precisas (t/h, t, min, %, pp). Nunca invente métricas fora do contexto recebido.
+Se o risco estiver elevado (>= 30%), houver starvation ou um gargalo claro, forneça uma ação recomendada estruturada compatível com o esquema JSON.`
+        : `You are the Process Engineering Operational Copilot for the FluxChain XAI dashboard.
 Respond in clear, concise, technical English (maximum 110 words), always grounded strictly in the provided telemetry numbers.
 Use accurate units (t/h, t, min, %, pp). Never invent metrics outside the received context.
 If risk is elevated (>= 30%), starvation is occurring, or a bottleneck is clear, provide a structured recommended action matching the JSON schema.`;
 
       const promptContext = JSON.stringify({
         operatorQuery: body.query,
+        responseLanguage: isPt ? "Portuguese (pt-BR)" : "English (en)",
         instantTelemetry: body.telemetry,
         simulatorParams: body.simParams,
         recentHistory: (body.history ?? []).slice(-4),
@@ -157,7 +251,8 @@ If risk is elevated (>= 30%), starvation is occurring, or a bottleneck is clear,
             properties: {
               reply: {
                 type: Type.STRING,
-                description: "Concise technical answer grounded in telemetry values and SHAP attribution.",
+                description:
+                  "Concise technical answer in the requested language grounded in telemetry values and SHAP attribution.",
               },
               actionType: {
                 type: Type.STRING,
@@ -165,7 +260,8 @@ If risk is elevated (>= 30%), starvation is occurring, or a bottleneck is clear,
               },
               actionLabel: {
                 type: Type.STRING,
-                description: "Short button label in English for the suggested action, if applicable.",
+                description:
+                  "Short button label in the requested language for the suggested action, if applicable.",
               },
               driverKey: {
                 type: Type.STRING,
@@ -192,8 +288,12 @@ If risk is elevated (>= 30%), starvation is occurring, or a bottleneck is clear,
               label:
                 parsed.actionLabel ||
                 (parsed.actionType === "rebalance_buffers"
-                  ? "Apply Buffer Rebalance"
-                  : "Execute Prescribed Action"),
+                  ? isPt
+                    ? "Aplicar Rebalanceamento"
+                    : "Apply Buffer Rebalance"
+                  : isPt
+                    ? "Executar Ação Prescrita"
+                    : "Execute Prescribed Action"),
               driverKey: parsed.driverKey || body.telemetry.topDrivers[0]?.key || "shap_A",
             }
           : null;

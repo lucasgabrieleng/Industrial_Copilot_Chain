@@ -1,10 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { CAPACITIES, clamp, fmt } from '../engine/processSimulation';
-import type { ProcessPoint } from '../types/process';
+import { UI_TEXT } from '../i18n/translations';
+import type { Language, ProcessPoint } from '../types/process';
 
 interface ScadaFlowCanvasProps {
   point: ProcessPoint;
   theme: 'dark' | 'light';
+  lang: Language;
   canvasRef?: React.RefObject<HTMLCanvasElement | null>;
 }
 
@@ -18,17 +20,20 @@ interface Particle {
 export const ScadaFlowCanvas: React.FC<ScadaFlowCanvasProps> = ({
   point,
   theme,
+  lang,
   canvasRef: externalRef,
 }) => {
   const internalRef = useRef<HTMLCanvasElement | null>(null);
   const canvasRef = externalRef ?? internalRef;
   const pointRef = useRef(point);
   const themeRef = useRef(theme);
+  const langRef = useRef(lang);
   const particlesRef = useRef<Particle[]>([]);
   const phaseRef = useRef(0);
 
   pointRef.current = point;
   themeRef.current = theme;
+  langRef.current = lang;
 
   useEffect(() => {
     particlesRef.current = Array.from({ length: 48 }, () => ({
@@ -60,6 +65,7 @@ export const ScadaFlowCanvas: React.FC<ScadaFlowCanvasProps> = ({
             const height = rect.height;
             const p = pointRef.current;
             const isDark = themeRef.current === 'dark';
+            const copy = UI_TEXT[langRef.current].topology;
             ctx.fillStyle = isDark ? '#020617' : '#f8fafc';
             ctx.fillRect(0, 0, width, height);
             const speedFactor = clamp(p.throughput / 185, 0.2, 1.5);
@@ -304,7 +310,7 @@ export const ScadaFlowCanvas: React.FC<ScadaFlowCanvasProps> = ({
                 : '600 10px "JetBrains Mono", monospace';
               if (cfg.starved) {
                 ctx.fillStyle = '#ef4444';
-                ctx.fillText('✖ STARVATION', cfg.x + 10, y + (compact ? 80 : 101));
+                ctx.fillText(copy.scadaStarvation, cfg.x + 10, y + (compact ? 80 : 101));
               } else {
                 ctx.fillStyle = cfg.oee < 75 ? '#f59e0b' : '#10b981';
                 ctx.fillText(`● OEE ${fmt(cfg.oee, 0)}%`, cfg.x + 10, y + (compact ? 80 : 101));
@@ -435,14 +441,14 @@ export const ScadaFlowCanvas: React.FC<ScadaFlowCanvasProps> = ({
                 ? '500 8px "JetBrains Mono", monospace'
                 : '500 9px "JetBrains Mono", monospace';
               ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
-              ctx.fillText(`${Math.round(fillRatio * 100)}% cap`, cfg.x + bufW / 2, centerY + 28);
+              ctx.fillText(`${Math.round(fillRatio * 100)}% ${copy.capShort}`, cfg.x + bufW / 2, centerY + 28);
             };
 
             drawStage({
               x: xA,
               kind: 'A',
-              name: 'Stage A',
-              sub: 'Feed / Milling',
+              name: copy.stageAName,
+              sub: copy.stageASub,
               rate: p.rateA,
               cap: CAPACITIES.capA,
               oee: p.oeeA,
@@ -451,7 +457,7 @@ export const ScadaFlowCanvas: React.FC<ScadaFlowCanvasProps> = ({
 
             drawBuffer({
               x: xAB,
-              name: 'Buffer AB',
+              name: copy.bufferABName,
               val: p.ab,
               cap: CAPACITIES.capAB,
               auto: p.autoAB,
@@ -460,8 +466,8 @@ export const ScadaFlowCanvas: React.FC<ScadaFlowCanvasProps> = ({
             drawStage({
               x: xB,
               kind: 'B',
-              name: 'Stage B',
-              sub: 'Reaction / Mass',
+              name: copy.stageBName,
+              sub: copy.stageBSub,
               rate: p.rateB,
               cap: CAPACITIES.capB,
               oee: p.oeeB,
@@ -471,7 +477,7 @@ export const ScadaFlowCanvas: React.FC<ScadaFlowCanvasProps> = ({
 
             drawBuffer({
               x: xBC,
-              name: 'Buffer BC',
+              name: copy.bufferBCName,
               val: p.bc,
               cap: CAPACITIES.capBC,
               auto: p.autoBC,
@@ -480,8 +486,8 @@ export const ScadaFlowCanvas: React.FC<ScadaFlowCanvasProps> = ({
             drawStage({
               x: xC,
               kind: 'C',
-              name: 'Stage C',
-              sub: 'Final Delivery',
+              name: copy.stageCName,
+              sub: copy.stageCSub,
               rate: p.rateC,
               cap: CAPACITIES.capC,
               oee: p.oeeC,
@@ -502,7 +508,7 @@ export const ScadaFlowCanvas: React.FC<ScadaFlowCanvasProps> = ({
     <canvas
       ref={canvasRef}
       className="block h-full w-full"
-      aria-label="Physical-stochastic production chain diagram: Stage A, Buffer AB, Stage B, Buffer BC, and Stage C"
+      aria-label={UI_TEXT[lang].topology.canvasAria}
     />
   );
 };

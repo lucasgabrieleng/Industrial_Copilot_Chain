@@ -3,6 +3,7 @@ import {
   BookOpen,
   Dice5,
   FileText,
+  Languages,
   MessageSquare,
   Moon,
   Pause,
@@ -33,10 +34,12 @@ import {
   getRankedDrivers,
   stepProcessPoint,
 } from './engine/processSimulation';
+import { FOCUS_LABELS, TAB_LABELS, UI_TEXT } from './i18n/translations';
 import type {
   AuditEntry,
   ChatMessage,
   FocusChartKey,
+  Language,
   NavMode,
   ProcessPoint,
   ShapDriverKey,
@@ -45,24 +48,11 @@ import type {
   TabId,
 } from './types/process';
 
-const TAB_ITEMS: Array<{ id: TabId; label: string }> = [
-  { id: 'all', label: 'Integrated View' },
-  { id: 'rates', label: 'Flow & Throughput' },
-  { id: 'buffers', label: 'Buffers & Starvation' },
-  { id: 'forecast', label: 'Production & Targets' },
-  { id: 'xai', label: 'SHAP Diagnostics' },
-  { id: 'counter', label: 'Counterfactual Prescriptions' },
-];
-
-const FOCUS_ITEMS: Array<{ id: FocusChartKey; label: string }> = [
-  { id: 'trend', label: 'Flow & Risk' },
-  { id: 'buffer', label: 'Buffers AB/BC' },
-  { id: 'cum', label: 'Production & Targets' },
-  { id: 'shap', label: 'SHAP Timeline' },
-  { id: 'waterfall', label: 'SHAP Waterfall' },
-];
+const TAB_IDS: TabId[] = ['all', 'rates', 'buffers', 'forecast', 'xai', 'counter'];
+const FOCUS_IDS: FocusChartKey[] = ['trend', 'buffer', 'cum', 'shap', 'waterfall'];
 
 export default function App() {
+  const [lang, setLang] = useState<Language>('en');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [showGuide, setShowGuide] = useState(true);
   const [simParams, setSimParams] = useState<SimParams>(DEFAULT_SIM_PARAMS);
@@ -82,9 +72,9 @@ export default function App() {
     {
       id: 'welcome-msg',
       role: 'assistant',
-      text: 'Connected to continuous telemetry across A → B → C. I can interpret risk deviations, explain additive SHAP attribution at the cursor, and apply counterfactual adjustments in one click.',
-      timestamp: 'Initial',
-      tag: 'XAI Copilot',
+      text: UI_TEXT.en.assistant.welcomeText,
+      timestamp: UI_TEXT.en.assistant.initialLabel,
+      tag: UI_TEXT.en.assistant.welcomeTag,
       recommendedAction: null,
     },
   ]);
@@ -97,6 +87,8 @@ export default function App() {
       action: 'SHAP calibration baseline initialized (18% natural risk).',
     },
   ]);
+
+  const t = UI_TEXT[lang];
 
   const [snapshotOpen, setSnapshotOpen] = useState(false);
   const [snapshotImages, setSnapshotImages] = useState<SnapshotImages>({
@@ -125,6 +117,37 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
+    document.documentElement.lang = lang;
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === 'welcome-msg'
+          ? {
+              ...m,
+              text: UI_TEXT[lang].assistant.welcomeText,
+              timestamp: UI_TEXT[lang].assistant.initialLabel,
+              tag: UI_TEXT[lang].assistant.welcomeTag,
+            }
+          : m
+      )
+    );
+    setAuditTrail((prev) =>
+      prev.map((entry) =>
+        entry.id === 'audit-1'
+          ? {
+              ...entry,
+              timestamp: lang === 'pt' ? 'Inicial' : 'Initial',
+              sender: lang === 'pt' ? 'Sistema XAI' : 'XAI System',
+              action:
+                lang === 'pt'
+                  ? 'Linha de base SHAP inicializada (18% de risco natural).'
+                  : 'SHAP calibration baseline initialized (18% natural risk).',
+            }
+          : entry
+      )
+    );
+  }, [lang]);
+
+  useEffect(() => {
     if (!isLive) return;
     const id = window.setInterval(() => {
       setSeries((prev) => {
@@ -142,18 +165,18 @@ export default function App() {
   const currentPoint = series[safeCursorIdx] ?? series[series.length - 1];
 
   const rankedDrivers = useMemo(
-    () => (currentPoint ? getRankedDrivers(currentPoint) : []),
-    [currentPoint]
+    () => (currentPoint ? getRankedDrivers(currentPoint, lang) : []),
+    [currentPoint, lang]
   );
 
   const counterfactuals = useMemo(
-    () => (currentPoint ? buildCounterfactuals(currentPoint) : []),
-    [currentPoint]
+    () => (currentPoint ? buildCounterfactuals(currentPoint, lang) : []),
+    [currentPoint, lang]
   );
 
   const activeAlerts = useMemo(
-    () => (currentPoint ? detectDeviationAlerts(currentPoint) : []),
-    [currentPoint]
+    () => (currentPoint ? detectDeviationAlerts(currentPoint, lang) : []),
+    [currentPoint, lang]
   );
 
   const addAudit = useCallback(
@@ -188,9 +211,13 @@ export default function App() {
   const handleParamChange = useCallback(
     <K extends keyof SimParams>(key: K, value: SimParams[K]) => {
       const next = { ...simParams, [key]: value };
-      recalcWithParams(next, 'Simulator', `Parameter ${String(key)} adjusted to ${String(value)}.`);
+      const msg =
+        lang === 'pt'
+          ? `Parâmetro ${String(key)} ajustado para ${String(value)}.`
+          : `Parameter ${String(key)} adjusted to ${String(value)}.`;
+      recalcWithParams(next, lang === 'pt' ? 'Simulador' : 'Simulator', msg);
     },
-    [simParams, recalcWithParams]
+    [simParams, recalcWithParams, lang]
   );
 
   const handleInjectShock = useCallback(
@@ -198,37 +225,49 @@ export default function App() {
       if (shock === 'reset') {
         recalcWithParams(
           DEFAULT_SIM_PARAMS,
-          'Simulator',
-          'Parameters restored to nominal design defaults.'
+          lang === 'pt' ? 'Simulador' : 'Simulator',
+          lang === 'pt'
+            ? 'Parâmetros restaurados aos valores nominais de projeto.'
+            : 'Parameters restored to nominal design defaults.'
         );
         return;
       }
       const label =
         shock === 'tripA'
-          ? 'Primary Failure in A'
+          ? lang === 'pt'
+            ? 'Falha Primária em A'
+            : 'Primary Failure in A'
           : shock === 'bottleB'
-            ? 'Bottleneck in Stage B'
-            : 'Demand Surge in C';
+            ? lang === 'pt'
+              ? 'Gargalo no Estágio B'
+              : 'Bottleneck in Stage B'
+            : lang === 'pt'
+              ? 'Surto de Demanda em C'
+              : 'Demand Surge in C';
       recalcWithParams(
         { ...simParams, shockEvent: shock },
-        'Simulator',
-        `Disturbance injected: ${label}.`
+        lang === 'pt' ? 'Simulador' : 'Simulator',
+        lang === 'pt' ? `Distúrbio injetado: ${label}.` : `Disturbance injected: ${label}.`
       );
     },
-    [simParams, recalcWithParams]
+    [simParams, recalcWithParams, lang]
   );
 
   const handleRegenerate = () => {
     const nextSeries = generateProcessSeries(simParams);
     setSeries(nextSeries);
     setCursorIdx(nextSeries.length - 1);
-    addAudit('Operator', 'Generated new stochastic scenario.');
+    addAudit(
+      lang === 'pt' ? 'Operador' : 'Operator',
+      lang === 'pt' ? 'Novo cenário estocástico gerado.' : 'Generated new stochastic scenario.'
+    );
   };
 
   const handleExecuteAction = useCallback(
     (actionType: 'rebalance_buffers' | 'apply_prescription', driverKey: ShapDriverKey) => {
       let nextParams: SimParams;
       let summary: string;
+      const isPt = lang === 'pt';
 
       if (actionType === 'rebalance_buffers') {
         const nextAB = Math.min(CAPACITIES.capAB, simParams.initialBufferAB + 45);
@@ -238,55 +277,74 @@ export default function App() {
           initialBufferAB: nextAB,
           initialBufferBC: nextBC,
         };
-        summary = `Buffer rebalance applied: Buffer AB (${nextAB} t) and Buffer BC (${nextBC} t).`;
+        summary = isPt
+          ? `Rebalanceamento aplicado: Buffer AB (${nextAB} t) e Buffer BC (${nextBC} t).`
+          : `Buffer rebalance applied: Buffer AB (${nextAB} t) and Buffer BC (${nextBC} t).`;
       } else {
         if (driverKey === 'shap_A') {
           nextParams = { ...simParams, targetRateA: 260, shockEvent: null };
-          summary = 'Stage A feed setpoint raised to 260 t/h and disturbance cleared.';
+          summary = isPt
+            ? 'Setpoint de alimentação do Estágio A elevado para 260 t/h e distúrbio limpo.'
+            : 'Stage A feed setpoint raised to 260 t/h and disturbance cleared.';
         } else if (driverKey === 'shap_AB') {
           nextParams = { ...simParams, initialBufferAB: 220, shockEvent: null };
-          summary = 'Buffer AB replenished to 220 t.';
+          summary = isPt
+            ? 'Buffer AB recomposto para 220 t.'
+            : 'Buffer AB replenished to 220 t.';
         } else if (driverKey === 'shap_B') {
           nextParams = { ...simParams, effB: 95, shockEvent: null };
-          summary = 'Stage B OEE optimized to 95%.';
+          summary = isPt
+            ? 'OEE do Estágio B otimizado para 95%.'
+            : 'Stage B OEE optimized to 95%.';
         } else if (driverKey === 'shap_BC') {
           nextParams = { ...simParams, initialBufferBC: 165, shockEvent: null };
-          summary = 'Buffer BC reinforced to 165 t.';
+          summary = isPt
+            ? 'Buffer BC reforçado para 165 t.'
+            : 'Buffer BC reinforced to 165 t.';
         } else {
           nextParams = { ...simParams, targetRateC: 200, shockEvent: null };
-          summary = 'Stage C target demand realigned to 200 t/h.';
+          summary = isPt
+            ? 'Demanda meta do Estágio C realinhada para 200 t/h.'
+            : 'Stage C target demand realigned to 200 t/h.';
         }
       }
 
-      recalcWithParams(nextParams, 'Operational Intervention', summary);
+      recalcWithParams(
+        nextParams,
+        isPt ? 'Intervenção Operacional' : 'Operational Intervention',
+        summary
+      );
       setMessages((prev) => [
         ...prev,
         {
           id: `sys-${Date.now()}`,
           role: 'assistant',
-          text: `Action executed successfully: ${summary} Risk and buffer trajectories have been recalculated.`,
+          text: isPt
+            ? `Ação executada com sucesso: ${summary} Trajetórias de risco e buffers recalculadas.`
+            : `Action executed successfully: ${summary} Risk and buffer trajectories have been recalculated.`,
           timestamp: currentPoint?.time ?? '--:--',
-          tag: 'Adjustment Applied',
+          tag: isPt ? 'Ajuste Aplicado' : 'Adjustment Applied',
           recommendedAction: null,
         },
       ]);
     },
-    [simParams, recalcWithParams, currentPoint?.time]
+    [simParams, recalcWithParams, currentPoint?.time, lang]
   );
 
   const handleSendMessage = async (text: string) => {
     if (!currentPoint) return;
 
+    const isPt = lang === 'pt';
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
       text,
       timestamp: currentPoint.time,
-      tag: 'Operator',
+      tag: isPt ? 'Operador' : 'Operator',
     };
 
     setMessages((prev) => [...prev, userMsg]);
-    addAudit('Operator', text);
+    addAudit(isPt ? 'Operador' : 'Operator', text);
     setIsAiLoading(true);
 
     try {
@@ -329,6 +387,7 @@ export default function App() {
             role: m.role,
             text: m.text,
           })),
+          lang,
         }),
       });
 
@@ -344,7 +403,9 @@ export default function App() {
 
       const replyText =
         data.reply ??
-        `At ${currentPoint.time}, throughput is ${fmt(currentPoint.throughput, 0)} t/h with consolidated risk at ${fmt(currentPoint.risk, 0)}%.`;
+        (isPt
+          ? `Às ${currentPoint.time}, a vazão final está em ${fmt(currentPoint.throughput, 0)} t/h com risco consolidado de ${fmt(currentPoint.risk, 0)}%.`
+          : `At ${currentPoint.time}, throughput is ${fmt(currentPoint.throughput, 0)} t/h with consolidated risk at ${fmt(currentPoint.risk, 0)}%.`);
 
       setMessages((prev) => [
         ...prev,
@@ -353,14 +414,16 @@ export default function App() {
           role: 'assistant',
           text: replyText,
           timestamp: currentPoint.time,
-          tag: data.source === 'gemini' ? 'Gemini XAI' : 'XAI Engine',
+          tag: data.source === 'gemini' ? 'Gemini XAI' : isPt ? 'Motor XAI' : 'XAI Engine',
           recommendedAction: data.recommendedAction ?? null,
         },
       ]);
-      addAudit('XAI Copilot', replyText);
+      addAudit(isPt ? 'Copiloto XAI' : 'XAI Copilot', replyText);
     } catch {
       const top = rankedDrivers[0];
-      const fallbackText = `Local analysis (${currentPoint.time}): Throughput at ${fmt(currentPoint.throughput, 0)} t/h, Risk at ${fmt(currentPoint.risk, 0)}%. Primary offender: ${top?.label ?? 'Stage A'} (+${fmt(top?.value ?? 0, 1)} pp).`;
+      const fallbackText = isPt
+        ? `Análise local (${currentPoint.time}): Vazão em ${fmt(currentPoint.throughput, 0)} t/h, Risco em ${fmt(currentPoint.risk, 0)}%. Principal ofensor: ${top?.label ?? 'Estágio A'} (+${fmt(top?.value ?? 0, 1)} pp).`
+        : `Local analysis (${currentPoint.time}): Throughput at ${fmt(currentPoint.throughput, 0)} t/h, Risk at ${fmt(currentPoint.risk, 0)}%. Primary offender: ${top?.label ?? 'Stage A'} (+${fmt(top?.value ?? 0, 1)} pp).`;
       setMessages((prev) => [
         ...prev,
         {
@@ -368,7 +431,7 @@ export default function App() {
           role: 'assistant',
           text: fallbackText,
           timestamp: currentPoint.time,
-          tag: 'XAI Engine',
+          tag: isPt ? 'Motor XAI' : 'XAI Engine',
           recommendedAction: null,
         },
       ]);
@@ -401,10 +464,10 @@ export default function App() {
 
   const riskStatusLabel =
     currentPoint.risk >= 50
-      ? '✖ Critical'
+      ? t.kpi.statusCritical
       : currentPoint.risk >= 30
-        ? '▲ Warning'
-        : '● Under Control';
+        ? t.kpi.statusWarning
+        : t.kpi.statusControlled;
 
   const riskStatusColor =
     currentPoint.risk >= 50
@@ -417,8 +480,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
-      {/* Top Bar Contract: Brand wordmark — 4 concise single-line nav links — 1 primary CTA */}
-      <header className="no-print sticky top-0 z-40 flex h-14 items-center justify-between gap-8 border-b border-slate-200 bg-white/95 px-4 backdrop-blur-sm sm:px-6 dark:border-slate-800 dark:bg-slate-950/95">
+      {/* Top Bar Contract: Brand wordmark — 4 concise single-line nav links — Language Toggle & 1 primary CTA */}
+      <header className="no-print sticky top-0 z-40 flex h-14 items-center justify-between gap-4 border-b border-slate-200 bg-white/95 px-4 backdrop-blur-sm sm:gap-8 sm:px-6 dark:border-slate-800 dark:bg-slate-950/95">
         <a
           href="#top"
           className="font-display text-base font-extrabold tracking-tight text-slate-900 whitespace-nowrap shrink-0 dark:text-white"
@@ -431,36 +494,54 @@ export default function App() {
             href="#alerts"
             className="hover:text-slate-900 hover:underline underline-offset-4 whitespace-nowrap shrink-0 dark:hover:text-white"
           >
-            Alerts & Simulator
+            {t.nav.alerts}
           </a>
           <a
             href="#topology"
             className="hover:text-slate-900 hover:underline underline-offset-4 whitespace-nowrap shrink-0 dark:hover:text-white"
           >
-            SCADA Topology
+            {t.nav.topology}
           </a>
           <a
             href="#analytics"
             className="hover:text-slate-900 hover:underline underline-offset-4 whitespace-nowrap shrink-0 dark:hover:text-white"
           >
-            Series & Buffers
+            {t.nav.analytics}
           </a>
           <a
             href="#shap"
             className="hover:text-slate-900 hover:underline underline-offset-4 whitespace-nowrap shrink-0 dark:hover:text-white"
           >
-            SHAP Explainability
+            {t.nav.shap}
           </a>
         </nav>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setLang((prev) => (prev === 'en' ? 'pt' : 'en'))}
+            aria-label={t.nav.languageToggleAria}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            <Languages className="h-3.5 w-3.5 text-sky-500" />
+            <span className="font-mono">
+              <span className={lang === 'en' ? 'text-sky-600 dark:text-sky-400' : 'opacity-50'}>
+                EN
+              </span>
+              <span className="mx-1 opacity-40">/</span>
+              <span className={lang === 'pt' ? 'text-sky-600 dark:text-sky-400' : 'opacity-50'}>
+                PT
+              </span>
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={handleOpenSnapshot}
             className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-sky-700 whitespace-nowrap shrink-0 cursor-pointer"
           >
             <FileText className="h-3.5 w-3.5" />
-            <span>Export PDF</span>
+            <span>{t.nav.exportPdf}</span>
           </button>
         </div>
       </header>
@@ -473,29 +554,27 @@ export default function App() {
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:items-center">
                 <div className="lg:col-span-7">
                   <div className="mb-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                    <span>Continuous Mass Transfer</span>
+                    <span>{t.hero.eyebrow1}</span>
                     <span aria-hidden="true">·</span>
-                    <span>Stage A → Buffer AB → Stage B → Buffer BC → Stage C</span>
+                    <span>{t.hero.eyebrow2}</span>
                     <span aria-hidden="true">·</span>
-                    <span>Additive SHAP Attribution</span>
+                    <span>{t.hero.eyebrow3}</span>
                   </div>
                   <h1 className="text-xl font-extrabold tracking-tight text-balance text-slate-900 sm:text-2xl dark:text-white">
-                    Continuous Flow Risk Monitoring & Explainability
+                    {t.hero.title}
                   </h1>
                   <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                    Simulate upstream feed fluctuations, anticipate bottlenecks before buffer
-                    depletion (starvation), and additively decompose root causes of final target
-                    default risk.
+                    {t.hero.subtitle}
                   </p>
                 </div>
 
                 <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3.5 lg:col-span-5 dark:border-slate-800 dark:bg-slate-950/60">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-bold tracking-wide text-slate-500 uppercase dark:text-slate-400">
-                      Simulation & Display Controls
+                      {t.hero.controlsTitle}
                     </span>
                     <span className="font-mono text-[11px] text-slate-500 tabular-nums dark:text-slate-400">
-                      Cursor {currentPoint.time}
+                      {t.hero.cursorLabel} {currentPoint.time}
                     </span>
                   </div>
 
@@ -513,7 +592,7 @@ export default function App() {
                         <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                       )}
                       {isLive ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-                      <span>{isLive ? 'Live: ON' : 'Live: OFF'}</span>
+                      <span>{isLive ? t.hero.liveOn : t.hero.liveOff}</span>
                     </button>
 
                     <button
@@ -522,7 +601,7 @@ export default function App() {
                       className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer"
                     >
                       <Dice5 className="h-3.5 w-3.5" />
-                      <span>New Scenario</span>
+                      <span>{t.hero.newScenario}</span>
                     </button>
 
                     <button
@@ -531,13 +610,13 @@ export default function App() {
                       className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer"
                     >
                       <BookOpen className="h-3.5 w-3.5" />
-                      <span>{showGuide ? 'Guide: ON' : 'Guide: OFF'}</span>
+                      <span>{showGuide ? t.hero.guideOn : t.hero.guideOff}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-                      aria-label="Toggle light and dark theme"
+                      aria-label={t.hero.toggleThemeAria}
                       className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer"
                     >
                       {theme === 'dark' ? (
@@ -545,7 +624,7 @@ export default function App() {
                       ) : (
                         <Moon className="h-3.5 w-3.5" />
                       )}
-                      <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                      <span>{theme === 'dark' ? t.hero.lightMode : t.hero.darkMode}</span>
                     </button>
 
                     <button
@@ -558,7 +637,7 @@ export default function App() {
                       }`}
                     >
                       <MessageSquare className="h-3.5 w-3.5" />
-                      <span>{isAiOpen ? 'AI Copilot: Active' : 'Open AI Copilot'}</span>
+                      <span>{isAiOpen ? t.hero.aiActive : t.hero.aiOpen}</span>
                     </button>
                   </div>
                 </div>
@@ -570,6 +649,7 @@ export default function App() {
               <AlertsBanner
                 alerts={activeAlerts}
                 currentTime={currentPoint.time}
+                lang={lang}
                 onExecuteAction={handleExecuteAction}
               />
             </div>
@@ -577,6 +657,7 @@ export default function App() {
             {/* Interactive What-If Studio */}
             <WhatIfStudio
               simParams={simParams}
+              lang={lang}
               onChangeParam={handleParamChange}
               onInjectShock={handleInjectShock}
             />
@@ -585,7 +666,7 @@ export default function App() {
             <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
               <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                 <div className="text-[11px] font-semibold tracking-wide text-rose-600 uppercase dark:text-rose-400">
-                  Stage A · Upstream
+                  {t.kpi.stageA}
                 </div>
                 <div className="mt-1.5 flex items-baseline">
                   <span className="font-mono text-2xl font-bold text-slate-900 tabular-nums dark:text-white">
@@ -597,7 +678,7 @@ export default function App() {
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
                   <span className="font-mono tabular-nums">OEE {fmt(currentPoint.oeeA, 0)}%</span>
-                  <span>{currentPoint.oeeA < 75 ? '▲ Low' : '● Nominal'}</span>
+                  <span>{currentPoint.oeeA < 75 ? t.kpi.low : t.kpi.nominal}</span>
                 </div>
               </div>
 
@@ -609,7 +690,7 @@ export default function App() {
                 }`}
               >
                 <div className="text-[11px] font-semibold tracking-wide text-orange-600 uppercase dark:text-orange-400">
-                  Buffer Silo AB
+                  {t.kpi.bufferAB}
                 </div>
                 <div className="mt-1.5 flex items-baseline">
                   <span className="font-mono text-2xl font-bold text-slate-900 tabular-nums dark:text-white">
@@ -627,7 +708,9 @@ export default function App() {
                   >
                     {fmt(currentPoint.autoAB, 0)} min
                   </span>
-                  <span>Cap {CAPACITIES.capAB} t</span>
+                  <span>
+                    {t.kpi.cap} {CAPACITIES.capAB} t
+                  </span>
                 </div>
               </div>
 
@@ -639,7 +722,7 @@ export default function App() {
                 }`}
               >
                 <div className="text-[11px] font-semibold tracking-wide text-amber-600 uppercase dark:text-amber-400">
-                  Stage B · Reaction
+                  {t.kpi.stageB}
                 </div>
                 <div className="mt-1.5 flex items-baseline">
                   <span className="font-mono text-2xl font-bold text-slate-900 tabular-nums dark:text-white">
@@ -658,7 +741,7 @@ export default function App() {
                         : ''
                     }
                   >
-                    {currentPoint.starvedB ? '✖ Starvation' : '● Normal'}
+                    {currentPoint.starvedB ? t.kpi.starvation : t.kpi.normal}
                   </span>
                 </div>
               </div>
@@ -671,7 +754,7 @@ export default function App() {
                 }`}
               >
                 <div className="text-[11px] font-semibold tracking-wide text-emerald-600 uppercase dark:text-emerald-400">
-                  Buffer Silo BC
+                  {t.kpi.bufferBC}
                 </div>
                 <div className="mt-1.5 flex items-baseline">
                   <span className="font-mono text-2xl font-bold text-slate-900 tabular-nums dark:text-white">
@@ -689,13 +772,15 @@ export default function App() {
                   >
                     {fmt(currentPoint.autoBC, 0)} min
                   </span>
-                  <span>Cap {CAPACITIES.capBC} t</span>
+                  <span>
+                    {t.kpi.cap} {CAPACITIES.capBC} t
+                  </span>
                 </div>
               </div>
 
               <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                 <div className="text-[11px] font-semibold tracking-wide text-cyan-600 uppercase dark:text-cyan-400">
-                  Final Throughput · C
+                  {t.kpi.throughputC}
                 </div>
                 <div className="mt-1.5 flex items-baseline">
                   <span className="font-mono text-2xl font-bold text-slate-900 tabular-nums dark:text-white">
@@ -707,7 +792,7 @@ export default function App() {
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
                   <span className="font-mono tabular-nums">
-                    Cum {fmt(currentPoint.prodCum, 0)} t
+                    {t.kpi.cum} {fmt(currentPoint.prodCum, 0)} t
                   </span>
                   <span
                     className={`font-mono tabular-nums ${
@@ -730,7 +815,7 @@ export default function App() {
                 }`}
               >
                 <div className="text-[11px] font-semibold tracking-wide text-rose-500 uppercase">
-                  Target Default Risk
+                  {t.kpi.targetRisk}
                 </div>
                 <div className="mt-1.5 flex items-baseline">
                   <span className="font-mono text-2xl font-bold text-slate-900 tabular-nums dark:text-white">
@@ -742,7 +827,7 @@ export default function App() {
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px]">
                   <span className="font-mono text-slate-500 tabular-nums dark:text-slate-400">
-                    Base 18%
+                    {t.kpi.base18}
                   </span>
                   <span className={`font-semibold ${riskStatusColor}`}>{riskStatusLabel}</span>
                 </div>
@@ -757,16 +842,15 @@ export default function App() {
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                    Physical-Stochastic Chain Topology
+                    {t.topology.title}
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Continuous mass flow, net inter-stage balance, dynamic silo levels, and
-                    real-time starvation detection.
+                    {t.topology.subtitle}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-xs">
                   <span className="hidden font-mono text-slate-500 tabular-nums sm:inline dark:text-slate-400">
-                    Balance Δ = Inflow − Outflow
+                    {t.topology.balanceFormula}
                   </span>
                   <span
                     className={`font-semibold ${
@@ -776,8 +860,8 @@ export default function App() {
                     }`}
                   >
                     {currentPoint.starvedB || currentPoint.starvedC
-                      ? '✖ Starvation Detected on Line'
-                      : '● Continuous Flow Stable'}
+                      ? t.topology.starvationDetected
+                      : t.topology.flowStable}
                   </span>
                 </div>
               </div>
@@ -785,6 +869,7 @@ export default function App() {
                 <ScadaFlowCanvas
                   point={currentPoint}
                   theme={theme}
+                  lang={lang}
                   canvasRef={flowCanvasRef}
                 />
               </div>
@@ -798,7 +883,7 @@ export default function App() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3 dark:border-slate-800">
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-bold tracking-wide text-slate-500 uppercase dark:text-slate-400">
-                    Inspection Mode
+                    {t.inspection.modeLabel}
                   </span>
                   <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
                     <button
@@ -810,7 +895,7 @@ export default function App() {
                           : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                       }`}
                     >
-                      Thematic Tabs
+                      {t.inspection.tabs}
                     </button>
                     <button
                       type="button"
@@ -821,13 +906,13 @@ export default function App() {
                           : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                       }`}
                     >
-                      Focus Mode
+                      {t.inspection.focus}
                     </button>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                  <span>Synchronized chart cursor:</span>
+                  <span>{t.inspection.syncCursor}</span>
                   <span className="font-mono font-bold text-sky-600 tabular-nums dark:text-sky-400">
                     {currentPoint.time}
                   </span>
@@ -836,35 +921,35 @@ export default function App() {
 
               {navMode === 'perspectives' ? (
                 <div className="flex flex-wrap gap-2">
-                  {TAB_ITEMS.map((tab) => (
+                  {TAB_IDS.map((tabId) => (
                     <button
-                      key={tab.id}
+                      key={tabId}
                       type="button"
-                      onClick={() => setActiveTab(tab.id)}
+                      onClick={() => setActiveTab(tabId)}
                       className={`rounded-lg border px-3 py-2 text-center text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer ${
-                        activeTab === tab.id
+                        activeTab === tabId
                           ? 'border-sky-500/50 bg-sky-500/12 text-sky-700 dark:text-sky-300'
                           : 'border-slate-200 bg-slate-50/60 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-800'
                       }`}
                     >
-                      {tab.label}
+                      {TAB_LABELS[lang][tabId]}
                     </button>
                   ))}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                  {FOCUS_ITEMS.map((item) => (
+                  {FOCUS_IDS.map((focusId) => (
                     <button
-                      key={item.id}
+                      key={focusId}
                       type="button"
-                      onClick={() => setFocusChart(item.id)}
+                      onClick={() => setFocusChart(focusId)}
                       className={`rounded-lg border px-3 py-2 text-center text-xs font-semibold transition-colors truncate cursor-pointer ${
-                        focusChart === item.id
+                        focusChart === focusId
                           ? 'border-sky-500/50 bg-sky-500/12 text-sky-700 dark:text-sky-300'
                           : 'border-slate-200 bg-slate-50/60 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-800'
                       }`}
                     >
-                      {item.label}
+                      {FOCUS_LABELS[lang][focusId]}
                     </button>
                   ))}
                 </div>
@@ -880,11 +965,10 @@ export default function App() {
                       <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
                         <div>
                           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                            Chain Temporal Dynamics & Final Throughput
+                            {t.charts.trendTitle}
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Hover across the chart to freeze any instant across all views and
-                            recompute SHAP attribution.
+                            {t.charts.trendSub}
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600 dark:text-slate-300">
@@ -898,11 +982,11 @@ export default function App() {
                             <span className="h-2 w-2 rounded-xs bg-cyan-500" /> C
                           </span>
                           <span className="flex items-center gap-1.5">
-                            <span className="h-0.5 w-3 bg-sky-400" /> Throughput
+                            <span className="h-0.5 w-3 bg-sky-400" /> {t.charts.throughputLegend}
                           </span>
                           <span className="flex items-center gap-1.5">
                             <span className="h-0.5 w-3 border-t-2 border-dashed border-rose-400" />{' '}
-                            Risk (%)
+                            {t.charts.riskLegend}
                           </span>
                         </div>
                       </div>
@@ -910,11 +994,9 @@ export default function App() {
                       {showGuide && (
                         <div className="mb-3 rounded-lg border border-dashed border-sky-500/35 bg-sky-500/5 px-3 py-2 text-xs text-slate-600 dark:text-slate-300">
                           <strong className="text-slate-900 dark:text-white">
-                            How to interpret:
+                            {t.charts.guideTitle}
                           </strong>{' '}
-                          Drops in Stage A that reach Stage C with delay illustrate the buffering
-                          effect of AB and BC. When the dashed risk curve spikes, shift target
-                          compliance is at risk.
+                          {t.charts.guideBody}
                         </div>
                       )}
 
@@ -923,6 +1005,7 @@ export default function App() {
                           series={series}
                           cursorIdx={safeCursorIdx}
                           theme={theme}
+                          lang={lang}
                           onCursorChange={setCursorIdx}
                           canvasRef={trendCanvasRef}
                         />
@@ -933,10 +1016,10 @@ export default function App() {
                       <div className="mb-2 flex items-start justify-between gap-2">
                         <div>
                           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                            Buffer AB & BC Dynamics
+                            {t.charts.bufferTitle}
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Stored volume vs critical starvation threshold.
+                            {t.charts.bufferSub}
                           </p>
                         </div>
                         <div className="flex items-center gap-2.5 text-[11px] text-slate-600 dark:text-slate-300">
@@ -952,10 +1035,9 @@ export default function App() {
                       {showGuide && (
                         <div className="mb-3 rounded-lg border border-dashed border-amber-500/35 bg-amber-500/5 px-3 py-2 text-xs text-slate-600 dark:text-slate-300">
                           <strong className="text-slate-900 dark:text-white">
-                            Critical threshold:
+                            {t.charts.thresholdTitle}
                           </strong>{' '}
-                          Below the red dashed line, remaining buffer autonomy drops under 15
-                          minutes.
+                          {t.charts.thresholdBody}
                         </div>
                       )}
 
@@ -964,6 +1046,7 @@ export default function App() {
                           series={series}
                           cursorIdx={safeCursorIdx}
                           theme={theme}
+                          lang={lang}
                           onCursorChange={setCursorIdx}
                           canvasRef={bufferCanvasRef}
                         />
@@ -974,11 +1057,10 @@ export default function App() {
                       <div className="mb-2 flex items-start justify-between gap-2">
                         <div>
                           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                            Cumulative Production vs Contracted Target
+                            {t.charts.cumTitle}
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Actual cumulative output and probabilistic uncertainty cone to end of
-                            cycle.
+                            {t.charts.cumSub}
                           </p>
                         </div>
                         <span
@@ -988,7 +1070,7 @@ export default function App() {
                               : 'text-rose-600 dark:text-rose-400'
                           }`}
                         >
-                          Variance {cumGap >= 0 ? '+' : ''}
+                          {t.charts.variance} {cumGap >= 0 ? '+' : ''}
                           {fmt(cumGap, 0)} t
                         </span>
                       </div>
@@ -997,6 +1079,7 @@ export default function App() {
                           series={series}
                           cursorIdx={safeCursorIdx}
                           theme={theme}
+                          lang={lang}
                           onCursorChange={setCursorIdx}
                           canvasRef={cumCanvasRef}
                         />
@@ -1010,10 +1093,10 @@ export default function App() {
                       <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
                         <div>
                           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                            Temporal SHAP Attribution (+pp Risk)
+                            {t.charts.shapTitle}
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Additive primary causes above the 18% natural baseline.
+                            {t.charts.shapSub}
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-slate-600 dark:text-slate-300">
@@ -1039,6 +1122,7 @@ export default function App() {
                           series={series}
                           cursorIdx={safeCursorIdx}
                           theme={theme}
+                          lang={lang}
                           onCursorChange={setCursorIdx}
                           canvasRef={shapCanvasRef}
                         />
@@ -1049,48 +1133,50 @@ export default function App() {
                       <div className="mb-2 flex items-start justify-between gap-2">
                         <div>
                           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                            SHAP Waterfall · Instant {currentPoint.time}
+                            {t.charts.waterfallTitle} {currentPoint.time}
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Additive risk breakdown starting from the 18% baseline.
+                            {t.charts.waterfallSub}
                           </p>
                         </div>
                         <span className={`font-mono text-xs font-bold tabular-nums ${riskStatusColor}`}>
-                          Risk {fmt(currentPoint.risk, 0)}%
+                          {t.charts.riskLabel} {fmt(currentPoint.risk, 0)}%
                         </span>
                       </div>
                       <div className="h-[220px] w-full">
                         <WaterfallChart
                           point={currentPoint}
                           theme={theme}
+                          lang={lang}
                           canvasRef={waterfallCanvasRef}
                         />
                       </div>
                       <p className="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                        At <span className="font-mono font-semibold">{currentPoint.time}</span>,
-                        consolidated risk is{' '}
+                        {t.charts.waterfallExplain1}{' '}
+                        <span className="font-mono font-semibold">{currentPoint.time}</span>,{' '}
+                        {t.charts.waterfallExplain2}{' '}
                         <span className="font-mono font-semibold">{fmt(currentPoint.risk, 0)}%</span>
-                        . The top risk driver is{' '}
+                        . {t.charts.waterfallExplain3}{' '}
                         <strong className="text-slate-900 dark:text-white">
                           {rankedDrivers[0]?.label}
                         </strong>{' '}
-                        (+{fmt(rankedDrivers[0]?.value ?? 0, 1)} pp), indicating the highest-leverage
-                        point for operator intervention.
+                        (+{fmt(rankedDrivers[0]?.value ?? 0, 1)} pp), {t.charts.waterfallExplain4}
                       </p>
                     </section>
 
                     <section className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 lg:col-span-6 dark:border-slate-800 dark:bg-slate-900">
                       <div className="mb-3">
                         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                          Driver Ranking & Counterfactual Prescriptions
+                          {t.charts.driversTitle}
                         </h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Lowest-effort interventions to recover target delivery.
+                          {t.charts.driversSub}
                         </p>
                       </div>
                       <XaiDiagnostics
                         rankedDrivers={rankedDrivers}
                         counterfactuals={counterfactuals}
+                        lang={lang}
                         onApplyPrescription={(driverKey) =>
                           handleExecuteAction('apply_prescription', driverKey)
                         }
@@ -1102,16 +1188,17 @@ export default function App() {
                 {activeTab === 'rates' && (
                   <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                     <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                      Stage A, B, C Flow Rates & Consolidated Throughput
+                      {t.expandedTabs.ratesTitle}
                     </h3>
                     <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-                      Expanded inspection of volumetric rates and downstream disturbance propagation.
+                      {t.expandedTabs.ratesSub}
                     </p>
                     <div className="h-[420px] w-full">
                       <TrendChart
                         series={series}
                         cursorIdx={safeCursorIdx}
                         theme={theme}
+                        lang={lang}
                         onCursorChange={setCursorIdx}
                         canvasRef={trendCanvasRef}
                       />
@@ -1122,16 +1209,17 @@ export default function App() {
                 {activeTab === 'buffers' && (
                   <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                     <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                      Intermediate Buffers AB & BC Monitoring
+                      {t.expandedTabs.buffersTitle}
                     </h3>
                     <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-                      Remaining autonomy in minutes before depletion and starvation protection.
+                      {t.expandedTabs.buffersSub}
                     </p>
                     <div className="h-[420px] w-full">
                       <BufferChart
                         series={series}
                         cursorIdx={safeCursorIdx}
                         theme={theme}
+                        lang={lang}
                         onCursorChange={setCursorIdx}
                         canvasRef={bufferCanvasRef}
                       />
@@ -1142,16 +1230,17 @@ export default function App() {
                 {activeTab === 'forecast' && (
                   <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                     <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                      Cumulative Production vs Contracted Target (Forecast)
+                      {t.expandedTabs.forecastTitle}
                     </h3>
                     <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-                      Probabilistic envelope based on instantaneous line throughput.
+                      {t.expandedTabs.forecastSub}
                     </p>
                     <div className="h-[420px] w-full">
                       <CumulativeChart
                         series={series}
                         cursorIdx={safeCursorIdx}
                         theme={theme}
+                        lang={lang}
                         onCursorChange={setCursorIdx}
                         canvasRef={cumCanvasRef}
                       />
@@ -1163,16 +1252,17 @@ export default function App() {
                   <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
                     <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-7 dark:border-slate-800 dark:bg-slate-900">
                       <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                        Temporal SHAP Series (+pp Risk)
+                        {t.expandedTabs.xaiTitle}
                       </h3>
                       <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-                        Historical additive contribution by stage and intermediate buffer.
+                        {t.expandedTabs.xaiSub}
                       </p>
                       <div className="h-[380px] w-full">
                         <ShapTimelineChart
                           series={series}
                           cursorIdx={safeCursorIdx}
                           theme={theme}
+                          lang={lang}
                           onCursorChange={setCursorIdx}
                           canvasRef={shapCanvasRef}
                         />
@@ -1180,15 +1270,16 @@ export default function App() {
                     </section>
                     <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-5 dark:border-slate-800 dark:bg-slate-900">
                       <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                        SHAP Waterfall ({currentPoint.time})
+                        {t.expandedTabs.waterfallTitle} ({currentPoint.time})
                       </h3>
                       <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-                        Exact attribution at the cursor-selected instant.
+                        {t.expandedTabs.waterfallSub}
                       </p>
                       <div className="h-[380px] w-full">
                         <WaterfallChart
                           point={currentPoint}
                           theme={theme}
+                          lang={lang}
                           canvasRef={waterfallCanvasRef}
                         />
                       </div>
@@ -1199,15 +1290,15 @@ export default function App() {
                 {activeTab === 'counter' && (
                   <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                     <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                      Prescriptive Counterfactual Analysis ("Prescriptive What-If")
+                      {t.expandedTabs.counterTitle}
                     </h3>
                     <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-                      Lowest-effort recommended interventions to restore target at{' '}
-                      {currentPoint.time}.
+                      {t.expandedTabs.counterSubPrefix} {currentPoint.time}.
                     </p>
                     <XaiDiagnostics
                       rankedDrivers={rankedDrivers}
                       counterfactuals={counterfactuals}
+                      lang={lang}
                       onApplyPrescription={(driverKey) =>
                         handleExecuteAction('apply_prescription', driverKey)
                       }
@@ -1222,11 +1313,10 @@ export default function App() {
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <div>
                       <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                        Focus Inspection ·{' '}
-                        {FOCUS_ITEMS.find((f) => f.id === focusChart)?.label ?? ''}
+                        {t.expandedTabs.focusTitlePrefix} {FOCUS_LABELS[lang][focusChart]}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Expanded visualization with synchronized cursor for deviation analysis.
+                        {t.expandedTabs.focusSub}
                       </p>
                     </div>
                     <span className="font-mono text-xs font-bold text-sky-600 tabular-nums dark:text-sky-400">
@@ -1239,6 +1329,7 @@ export default function App() {
                         series={series}
                         cursorIdx={safeCursorIdx}
                         theme={theme}
+                        lang={lang}
                         onCursorChange={setCursorIdx}
                         canvasRef={trendCanvasRef}
                       />
@@ -1248,6 +1339,7 @@ export default function App() {
                         series={series}
                         cursorIdx={safeCursorIdx}
                         theme={theme}
+                        lang={lang}
                         onCursorChange={setCursorIdx}
                         canvasRef={bufferCanvasRef}
                       />
@@ -1257,6 +1349,7 @@ export default function App() {
                         series={series}
                         cursorIdx={safeCursorIdx}
                         theme={theme}
+                        lang={lang}
                         onCursorChange={setCursorIdx}
                         canvasRef={cumCanvasRef}
                       />
@@ -1266,6 +1359,7 @@ export default function App() {
                         series={series}
                         cursorIdx={safeCursorIdx}
                         theme={theme}
+                        lang={lang}
                         onCursorChange={setCursorIdx}
                         canvasRef={shapCanvasRef}
                       />
@@ -1274,6 +1368,7 @@ export default function App() {
                       <WaterfallChart
                         point={currentPoint}
                         theme={theme}
+                        lang={lang}
                         canvasRef={waterfallCanvasRef}
                       />
                     )}
@@ -1284,19 +1379,20 @@ export default function App() {
                   <div>
                     <div className="mb-2 flex items-center justify-between">
                       <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                        SHAP Snapshot at Cursor
+                        {t.expandedTabs.focusSnapshot}
                       </h3>
                       <span className="font-mono text-xs font-bold text-slate-500 tabular-nums">
                         {currentPoint.time}
                       </span>
                     </div>
                     <div className="h-[200px] w-full">
-                      <WaterfallChart point={currentPoint} theme={theme} />
+                      <WaterfallChart point={currentPoint} theme={theme} lang={lang} />
                     </div>
                   </div>
                   <XaiDiagnostics
                     rankedDrivers={rankedDrivers}
                     counterfactuals={counterfactuals}
+                    lang={lang}
                     onApplyPrescription={(driverKey) =>
                       handleExecuteAction('apply_prescription', driverKey)
                     }
@@ -1307,8 +1403,7 @@ export default function App() {
             )}
 
             <footer className="no-print border-t border-slate-200 pt-4 pb-8 text-center text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
-              FluxChain XAI · Continuous Operations Center A → B → C · Additive SHAP Attribution &
-              Operational Audit
+              {t.footer}
             </footer>
           </div>
         </main>
@@ -1319,6 +1414,7 @@ export default function App() {
           point={currentPoint}
           messages={messages}
           isLoading={isAiLoading}
+          lang={lang}
           onSendMessage={handleSendMessage}
           onExecuteAction={handleExecuteAction}
         />
@@ -1331,6 +1427,7 @@ export default function App() {
         simParams={simParams}
         images={snapshotImages}
         auditTrail={auditTrail}
+        lang={lang}
       />
     </div>
   );

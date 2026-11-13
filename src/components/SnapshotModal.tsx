@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { Printer, X } from 'lucide-react';
 import { fmt, getRankedDrivers } from '../engine/processSimulation';
-import type { AuditEntry, ProcessPoint, SimParams } from '../types/process';
+import { UI_TEXT } from '../i18n/translations';
+import type { AuditEntry, Language, ProcessPoint, SimParams } from '../types/process';
 
 export interface SnapshotImages {
   flow: string;
@@ -19,6 +20,7 @@ interface SnapshotModalProps {
   simParams: SimParams;
   images: SnapshotImages;
   auditTrail: AuditEntry[];
+  lang: Language;
 }
 
 export const SnapshotModal: React.FC<SnapshotModalProps> = ({
@@ -28,25 +30,24 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({
   simParams,
   images,
   auditTrail,
+  lang,
 }) => {
+  const t = UI_TEXT[lang].snapshot;
+
   const { timestampStr, shiftStr, hashAuth } = useMemo(() => {
     const now = new Date();
     const h = now.getHours();
+    const locale = lang === 'pt' ? 'pt-BR' : 'en-US';
     return {
-      timestampStr: `${now.toLocaleDateString('en-US')} ${now.toLocaleTimeString('en-US')}`,
-      shiftStr:
-        h >= 6 && h < 14
-          ? 'Shift 1 (Morning)'
-          : h >= 14 && h < 22
-            ? 'Shift 2 (Afternoon)'
-            : 'Shift 3 (Night)',
+      timestampStr: `${now.toLocaleDateString(locale)} ${now.toLocaleTimeString(locale)}`,
+      shiftStr: h >= 6 && h < 14 ? t.shift1 : h >= 14 && h < 22 ? t.shift2 : t.shift3,
       hashAuth: `AUTH-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
     };
-  }, [isOpen]);
+  }, [isOpen, lang, t.shift1, t.shift2, t.shift3]);
 
   if (!isOpen) return null;
 
-  const ranked = getRankedDrivers(point);
+  const ranked = getRankedDrivers(point, lang);
   const top = ranked[0];
   const second = ranked[1];
 
@@ -55,12 +56,8 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({
       <div className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white text-slate-900 shadow-2xl print:h-auto print:max-w-none print:rounded-none print:shadow-none">
         <div className="no-print flex items-center justify-between bg-slate-900 px-5 py-3 text-white">
           <div>
-            <h3 className="text-sm font-bold">
-              Executive Audit Report & XAI Snapshot
-            </h3>
-            <p className="text-[11px] text-slate-400">
-              Multi-page A4 structured preview ready for printing / PDF export
-            </p>
+            <h3 className="text-sm font-bold">{t.modalTitle}</h3>
+            <p className="text-[11px] text-slate-400">{t.modalSub}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -69,7 +66,7 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({
               className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-700 cursor-pointer"
             >
               <Printer className="h-3.5 w-3.5" />
-              <span>Print / Save PDF</span>
+              <span>{t.printBtn}</span>
             </button>
             <button
               type="button"
@@ -77,7 +74,7 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({
               className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:bg-slate-800 cursor-pointer"
             >
               <X className="h-3.5 w-3.5" />
-              <span>Close</span>
+              <span>{t.closeBtn}</span>
             </button>
           </div>
         </div>
@@ -87,47 +84,49 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({
             {/* Page 1 */}
             <div className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-sky-600 pb-3">
               <div>
-                <h1 className="text-xl font-extrabold text-slate-900">
-                  Operational Audit & XAI Snapshot Report
-                </h1>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  Continuous Production Chain A → B → C · Stochastic Monitoring & Root-Cause Diagnostics
-                </p>
+                <h1 className="text-xl font-extrabold text-slate-900">{t.reportTitle}</h1>
+                <p className="mt-0.5 text-xs text-slate-500">{t.reportSub}</p>
               </div>
               <div className="text-right font-mono text-[11px] text-slate-600 tabular-nums">
-                <div>Issued: {timestampStr}</div>
-                <div>Frozen instant: {point.time}</div>
+                <div>
+                  {t.issued} {timestampStr}
+                </div>
+                <div>
+                  {t.frozenInstant} {point.time}
+                </div>
                 <div>{shiftStr}</div>
-                <div>Record: {hashAuth}</div>
+                <div>
+                  {t.record} {hashAuth}
+                </div>
                 <div
                   className={`mt-1 font-sans text-xs font-bold ${
                     point.risk >= 40 ? 'text-rose-600' : 'text-emerald-700'
                   }`}
                 >
-                  {point.risk >= 40 ? '✖ Critical Target Alarm' : '● Stable Nominal Envelope'}
+                  {point.risk >= 40 ? t.criticalAlarm : t.nominalEnvelope}
                 </div>
               </div>
             </div>
 
             <div className="my-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
               <div className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-center">
-                <div className="text-[10px] font-bold text-slate-500 uppercase">Stage A</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase">{t.stageA}</div>
                 <div className="my-0.5 font-mono text-base font-extrabold text-sky-700 tabular-nums">
                   {fmt(point.rateA, 0)} t/h
                 </div>
                 <div className="font-mono text-[10px] text-slate-600">OEE {fmt(point.oeeA, 0)}%</div>
               </div>
               <div className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-center">
-                <div className="text-[10px] font-bold text-slate-500 uppercase">Buffer AB</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase">{t.bufferAB}</div>
                 <div className="my-0.5 font-mono text-base font-extrabold text-orange-600 tabular-nums">
                   {fmt(point.ab, 0)} t
                 </div>
                 <div className="font-mono text-[10px] text-slate-600">
-                  Auton {fmt(point.autoAB, 0)} min
+                  {t.auton} {fmt(point.autoAB, 0)} min
                 </div>
               </div>
               <div className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-center">
-                <div className="text-[10px] font-bold text-slate-500 uppercase">Stage B</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase">{t.stageB}</div>
                 <div className="my-0.5 font-mono text-base font-extrabold text-amber-600 tabular-nums">
                   {fmt(point.rateB, 0)} t/h
                 </div>
@@ -136,25 +135,25 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({
                 </div>
               </div>
               <div className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-center">
-                <div className="text-[10px] font-bold text-slate-500 uppercase">Buffer BC</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase">{t.bufferBC}</div>
                 <div className="my-0.5 font-mono text-base font-extrabold text-emerald-600 tabular-nums">
                   {fmt(point.bc, 0)} t
                 </div>
                 <div className="font-mono text-[10px] text-slate-600">
-                  Auton {fmt(point.autoBC, 0)} min
+                  {t.auton} {fmt(point.autoBC, 0)} min
                 </div>
               </div>
               <div className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-center">
-                <div className="text-[10px] font-bold text-slate-500 uppercase">Throughput C</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase">{t.throughputC}</div>
                 <div className="my-0.5 font-mono text-base font-extrabold text-cyan-700 tabular-nums">
                   {fmt(point.throughput, 0)} t/h
                 </div>
                 <div className="font-mono text-[10px] text-slate-600">
-                  Cum {fmt(point.prodCum, 0)} t
+                  {t.cum} {fmt(point.prodCum, 0)} t
                 </div>
               </div>
               <div className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-center">
-                <div className="text-[10px] font-bold text-slate-500 uppercase">Target Risk</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase">{t.targetRisk}</div>
                 <div
                   className={`my-0.5 font-mono text-base font-extrabold tabular-nums ${
                     point.risk >= 40 ? 'text-rose-600' : 'text-emerald-700'
@@ -162,33 +161,33 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({
                 >
                   {fmt(point.risk, 0)}%
                 </div>
-                <div className="font-mono text-[10px] text-slate-600">Base 18%</div>
+                <div className="font-mono text-[10px] text-slate-600">{t.base18}</div>
               </div>
             </div>
 
             <div className="print-break-avoid mb-4 rounded-md border border-slate-200 p-3.5">
               <h3 className="mb-2 border-b border-slate-200 pb-1 text-xs font-bold text-slate-900">
-                Active What-If Simulator Parameters ({point.time})
+                {t.activeSimParams} ({point.time})
               </h3>
               <div className="grid grid-cols-5 gap-2 text-center text-xs">
                 <div className="rounded bg-slate-50 p-2">
-                  <span className="block text-[10px] text-slate-500">Setpoint A</span>
+                  <span className="block text-[10px] text-slate-500">{t.setpointA}</span>
                   <strong className="font-mono">{simParams.targetRateA} t/h</strong>
                 </div>
                 <div className="rounded bg-slate-50 p-2">
-                  <span className="block text-[10px] text-slate-500">Buffer AB</span>
+                  <span className="block text-[10px] text-slate-500">{t.bufferAB}</span>
                   <strong className="font-mono">{simParams.initialBufferAB} t</strong>
                 </div>
                 <div className="rounded bg-slate-50 p-2">
-                  <span className="block text-[10px] text-slate-500">Stage B OEE</span>
+                  <span className="block text-[10px] text-slate-500">{t.stageBOee}</span>
                   <strong className="font-mono">{simParams.effB}%</strong>
                 </div>
                 <div className="rounded bg-slate-50 p-2">
-                  <span className="block text-[10px] text-slate-500">Buffer BC</span>
+                  <span className="block text-[10px] text-slate-500">{t.bufferBC}</span>
                   <strong className="font-mono">{simParams.initialBufferBC} t</strong>
                 </div>
                 <div className="rounded bg-slate-50 p-2">
-                  <span className="block text-[10px] text-slate-500">Target C</span>
+                  <span className="block text-[10px] text-slate-500">{t.targetC}</span>
                   <strong className="font-mono">{simParams.targetRateC} t/h</strong>
                 </div>
               </div>
@@ -197,11 +196,11 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({
             {images.flow && (
               <div className="print-break-avoid mb-4 rounded-md border border-slate-200 p-3.5">
                 <h3 className="mb-2 border-b border-slate-200 pb-1 text-xs font-bold text-slate-900">
-                  Frozen Physical-Stochastic Topology (SCADA)
+                  {t.frozenScada}
                 </h3>
                 <img
                   src={images.flow}
-                  alt="Frozen SCADA production chain snapshot"
+                  alt={t.frozenScada}
                   className="max-h-44 w-full rounded bg-slate-50 object-contain"
                 />
               </div>
@@ -211,39 +210,31 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({
 
             {/* Page 2 */}
             <h2 className="mt-4 mb-3 border-b border-slate-300 pb-1.5 text-base font-bold text-slate-900">
-              Temporal Dynamics & Batch Forecast
+              {t.page2Title}
             </h2>
             <div className="print-break-avoid mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
               {images.trend && (
                 <div className="rounded-md border border-slate-200 bg-slate-50 p-2.5">
-                  <h4 className="mb-1 text-xs font-bold text-slate-700">
-                    Chain Flow Rates vs Risk (%)
-                  </h4>
-                  <img src={images.trend} alt="Temporal flow rates chart" className="w-full rounded" />
+                  <h4 className="mb-1 text-xs font-bold text-slate-700">{t.chartTrend}</h4>
+                  <img src={images.trend} alt={t.chartTrend} className="w-full rounded" />
                 </div>
               )}
               {images.buffer && (
                 <div className="rounded-md border border-slate-200 bg-slate-50 p-2.5">
-                  <h4 className="mb-1 text-xs font-bold text-slate-700">
-                    Buffer AB & BC Volume and Autonomy
-                  </h4>
-                  <img src={images.buffer} alt="Buffer levels chart" className="w-full rounded" />
+                  <h4 className="mb-1 text-xs font-bold text-slate-700">{t.chartBuffer}</h4>
+                  <img src={images.buffer} alt={t.chartBuffer} className="w-full rounded" />
                 </div>
               )}
               {images.cum && (
                 <div className="rounded-md border border-slate-200 bg-slate-50 p-2.5">
-                  <h4 className="mb-1 text-xs font-bold text-slate-700">
-                    Cumulative Production vs Target (Forecast)
-                  </h4>
-                  <img src={images.cum} alt="Cumulative production chart" className="w-full rounded" />
+                  <h4 className="mb-1 text-xs font-bold text-slate-700">{t.chartCum}</h4>
+                  <img src={images.cum} alt={t.chartCum} className="w-full rounded" />
                 </div>
               )}
               {images.shap && (
                 <div className="rounded-md border border-slate-200 bg-slate-50 p-2.5">
-                  <h4 className="mb-1 text-xs font-bold text-slate-700">
-                    Additive Temporal SHAP Attribution (+pp)
-                  </h4>
-                  <img src={images.shap} alt="Temporal SHAP chart" className="w-full rounded" />
+                  <h4 className="mb-1 text-xs font-bold text-slate-700">{t.chartShap}</h4>
+                  <img src={images.shap} alt={t.chartShap} className="w-full rounded" />
                 </div>
               )}
             </div>
@@ -252,28 +243,26 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({
 
             {/* Page 3 */}
             <h2 className="mt-4 mb-3 border-b border-slate-300 pb-1.5 text-base font-bold text-slate-900">
-              SHAP Explainability, Counterfactual Prescriptions & Audit Trail
+              {t.page3Title}
             </h2>
             <div className="print-break-avoid mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
               {images.waterfall && (
                 <div className="rounded-md border border-slate-200 bg-slate-50 p-2.5">
                   <h4 className="mb-1 text-xs font-bold text-slate-700">
-                    SHAP Waterfall at {point.time}
+                    {t.waterfallAt} {point.time}
                   </h4>
-                  <img src={images.waterfall} alt="SHAP Waterfall" className="w-full rounded" />
+                  <img src={images.waterfall} alt={t.waterfallAt} className="w-full rounded" />
                 </div>
               )}
               <div className="rounded-md border border-slate-200 p-3">
-                <h4 className="mb-2 text-xs font-bold text-slate-900">
-                  Weighted Risk Driver Ranking (SHAP)
-                </h4>
+                <h4 className="mb-2 text-xs font-bold text-slate-900">{t.rankingTitle}</h4>
                 <table className="w-full border-collapse text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50 text-slate-600">
                       <th className="p-1.5">#</th>
-                      <th className="p-1.5">Driver</th>
-                      <th className="p-1.5 text-right">Impact</th>
-                      <th className="p-1.5">Severity</th>
+                      <th className="p-1.5">{t.colDriver}</th>
+                      <th className="p-1.5 text-right">{t.colImpact}</th>
+                      <th className="p-1.5">{t.colSeverity}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -293,7 +282,7 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({
                                 : 'text-emerald-700'
                           }`}
                         >
-                          {d.value > 15 ? 'Critical' : d.value > 6 ? 'Moderate' : 'Stable'}
+                          {d.value > 15 ? t.sevCritical : d.value > 6 ? t.sevModerate : t.sevStable}
                         </td>
                       </tr>
                     ))}
@@ -304,39 +293,39 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({
 
             <div className="print-break-avoid mb-4 rounded-md border border-slate-200 p-3.5">
               <h3 className="mb-2 border-b border-slate-200 pb-1 text-xs font-bold text-slate-900">
-                Recommended Counterfactual Prescriptions
+                {t.prescriptionsTitle}
               </h3>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div className="rounded border border-slate-200 bg-slate-50 p-2.5 text-xs">
                   <div className="flex items-center justify-between font-bold text-slate-900">
-                    <span>Priority: {top.shortLabel}</span>
+                    <span>
+                      {t.priority} {top.shortLabel}
+                    </span>
                     <span className="font-mono text-emerald-700">
                       -{fmt(top.value * 0.65, 1)} pp
                     </span>
                   </div>
                   <p className="mt-1 text-slate-600">
-                    Intervene directly on {top.label} to stabilize mass transfer and prevent
-                    downstream starvation propagation.
+                    {t.priorityDescPrefix} {top.label} {t.priorityDescSuffix}
                   </p>
                 </div>
                 <div className="rounded border border-slate-200 bg-slate-50 p-2.5 text-xs">
                   <div className="flex items-center justify-between font-bold text-slate-900">
-                    <span>Preventive: {second.shortLabel}</span>
+                    <span>
+                      {t.preventive} {second.shortLabel}
+                    </span>
                     <span className="font-mono text-emerald-700">
                       -{fmt(second.value * 0.5, 1)} pp
                     </span>
                   </div>
-                  <p className="mt-1 text-slate-600">
-                    Smooth transient setpoints to preserve at least 15 minutes of autonomy across
-                    intermediate buffers.
-                  </p>
+                  <p className="mt-1 text-slate-600">{t.preventiveDesc}</p>
                 </div>
               </div>
             </div>
 
             <div className="print-break-avoid rounded-md border border-slate-200 p-3.5">
               <h3 className="mb-2 border-b border-slate-200 pb-1 text-xs font-bold text-slate-900">
-                Audit Log: Operational Commands & AI Dialogs
+                {t.auditLogTitle}
               </h3>
               <div className="space-y-1.5 text-xs">
                 {auditTrail.slice(-8).map((entry) => (

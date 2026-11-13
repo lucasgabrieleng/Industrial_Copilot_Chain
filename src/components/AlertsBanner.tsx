@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, ShieldAlert, Wrench } from 'lucide-react';
-import type { DeviationAlert, ShapDriverKey } from '../types/process';
+import { UI_TEXT } from '../i18n/translations';
+import type { DeviationAlert, Language, ShapDriverKey } from '../types/process';
 
 interface AlertsBannerProps {
   alerts: DeviationAlert[];
   currentTime: string;
+  lang: Language;
   onExecuteAction: (actionType: 'rebalance_buffers' | 'apply_prescription', driverKey: ShapDriverKey) => void;
 }
 
 export const AlertsBanner: React.FC<AlertsBannerProps> = ({
   alerts,
   currentTime,
+  lang,
   onExecuteAction,
 }) => {
+  const t = UI_TEXT[lang].alerts;
   const [expanded, setExpanded] = useState(true);
 
   const criticalCount = alerts.filter((a) => a.severity === 'critical').length;
@@ -26,15 +30,15 @@ export const AlertsBanner: React.FC<AlertsBannerProps> = ({
       >
         <div className="flex items-center gap-2.5 text-emerald-700 dark:text-emerald-300">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
-          <span className="font-semibold">Nominal Operation</span>
+          <span className="font-semibold">{t.nominalTitle}</span>
           <span aria-hidden="true" className="text-slate-400">·</span>
           <span className="text-xs text-slate-600 dark:text-slate-300">
-            No flow deviation, starvation risk, or target breach detected at{' '}
+            {t.nominalBodyPrefix}{' '}
             <span className="font-mono font-semibold tabular-nums">{currentTime}</span>.
           </span>
         </div>
         <span className="font-mono text-xs text-emerald-700 tabular-nums dark:text-emerald-400">
-          0 active alerts
+          0 {t.activeAlertsSuffix}
         </span>
       </section>
     );
@@ -59,22 +63,22 @@ export const AlertsBanner: React.FC<AlertsBannerProps> = ({
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
           )}
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-            Real-Time Visual Alerts · Instant{' '}
+            {t.headerPrefix}{' '}
             <span className="font-mono tabular-nums">{currentTime}</span>
           </h2>
           <span className="text-xs text-slate-600 dark:text-slate-300">
-            {criticalCount > 0 && `${criticalCount} critical`}
+            {criticalCount > 0 && `${criticalCount} ${t.criticalCountLabel}`}
             {criticalCount > 0 && warningCount > 0 && ' · '}
-            {warningCount > 0 && `${warningCount} warning`}
+            {warningCount > 0 && `${warningCount} ${t.warningCountLabel}`}
           </span>
         </div>
 
         <button
           type="button"
           onClick={() => setExpanded((prev) => !prev)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300/70 bg-white/80 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-white dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:bg-slate-800 whitespace-nowrap shrink-0"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300/70 bg-white/80 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-white dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer"
         >
-          <span>{expanded ? 'Collapse details' : `View ${alerts.length} deviations`}</span>
+          <span>{expanded ? t.collapse : `${t.expandPrefix} ${alerts.length} ${t.expandSuffix}`}</span>
           {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
         </button>
       </div>
@@ -101,7 +105,7 @@ export const AlertsBanner: React.FC<AlertsBannerProps> = ({
                           : 'text-amber-600 dark:text-amber-400'
                       }`}
                     >
-                      {isCrit ? '✖ Critical' : '▲ Warning'}
+                      {isCrit ? t.criticalBadge : t.warningBadge}
                     </span>
                     <span aria-hidden="true" className="text-slate-400">·</span>
                     <span className="font-mono text-[11px] font-semibold text-slate-700 tabular-nums dark:text-slate-200">
